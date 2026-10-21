@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="banner.png" alt="AFK Nightmare Zone banner">
+</p>
 <h1 align="center">AFK Nightmare Zone</h1>
 
 AFK Nightmare Zone is a RuneLite plugin that keeps long Nightmare Zone sessions safe and easy to track: it warns you
