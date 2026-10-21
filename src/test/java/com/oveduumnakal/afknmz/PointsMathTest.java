@@ -7,6 +7,8 @@ package com.oveduumnakal.afknmz;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /** Covers the pure points arithmetic: gain, hourly rate and formatting. */
 public class PointsMathTest
@@ -48,5 +50,13 @@ public class PointsMathTest
 		assertEquals("0", PointsMath.format(0));
 		assertEquals("999", PointsMath.format(999));
 		assertEquals("1,234,567", PointsMath.format(1234567));
+	}
+
+	@Test
+	public void seedsOnlyWhenNothingOrZeroIsSaved()
+	{
+		assertTrue(PointsMath.needsSeed(null));
+		assertTrue(PointsMath.needsSeed(0L));
+		assertFalse(PointsMath.needsSeed(1L));
 	}
 }

@@ -10,8 +10,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import net.runelite.api.Client;
-import net.runelite.api.coords.LocalPoint;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.Notifier;
@@ -26,9 +24,6 @@ import net.runelite.client.ui.overlay.OverlayManager;
 @Singleton
 public class RewardTracker
 {
-	private static final int NMZ_LOBBY_REGION = 10288;
-	private static final int NMZ_DREAM_REGION = 9033;
-
 	private final Client client;
 	private final EventBus eventBus;
 	private final OverlayManager overlayManager;
@@ -36,7 +31,8 @@ public class RewardTracker
 	private final AfkNmzConfig config;
 	private final RewardOverlay overlay;
 
-	private boolean notified;
+	private final AffordableAlert affordableAlert = new AffordableAlert();
+	private final RunPoints runPoints = new RunPoints();
 
 	/** Creates the tracker; call {@link #start()} to begin tracking. */
 	@Inject
@@ -59,7 +55,8 @@ public class RewardTracker
 	/** Registers for events and adds the overlay. */
 	public void start()
 	{
-		notified = false;
+		affordableAlert.reset();
+		runPoints.reset();
 		eventBus.register(this);
 		overlayManager.add(overlay);
 	}
@@ -70,6 +67,7 @@ public class RewardTracker
 		eventBus.unregister(this);
 		overlayManager.remove(overlay);
 		overlay.setGoal(null);
+		overlay.setRunPoints(0);
 	}
 
 	/** Returns the ticked rewards with their wanted quantities, in enum order. */
@@ -90,35 +88,18 @@ public class RewardTracker
 	public void onGameTick(GameTick event)
 	{
 		Map<NmzReward, Integer> wanted = selectedRewards();
-		if (wanted.isEmpty() || !inNmz())
+		if (wanted.isEmpty() || !NmzArea.inNmz(client))
 		{
 			overlay.setGoal(null);
 			return;
 		}
 
-		RewardGoal goal = RewardGoal.calculate(
-			wanted, client.getVarbitValue(VarbitID.NZONE_CURRENTPOINTS), config.hardDiscount());
+		int points = client.getVarbitValue(VarbitID.NZONE_CURRENTPOINTS);
+		overlay.setRunPoints(runPoints.update(NmzArea.inDream(client), points));
+		RewardGoal goal = RewardGoal.calculate(wanted, points, config.hardDiscount());
 		overlay.setGoal(goal);
 
-		if (!goal.isAffordable())
-		{
-			notified = false;
-			return;
-		}
-
-		if (!notified && config.rewardNotify())
-			notifier.notify("You have enough NMZ points for your selected rewards!");
-
-		notified = true;
-	}
-
-	private boolean inNmz()
-	{
-		if (client.getLocalPlayer() == null)
-			return false;
-
-		LocalPoint local = client.getLocalPlayer().getLocalLocation();
-		int region = WorldPoint.fromLocalInstance(client, local).getRegionID();
-		return region == NMZ_LOBBY_REGION || region == NMZ_DREAM_REGION;
+		if (affordableAlert.update(goal.isAffordable()))
+			notifier.notify(config.rewardNotify(), "You have enough NMZ points for your selected rewards!");
 	}
 }

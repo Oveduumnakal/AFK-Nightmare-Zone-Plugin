@@ -18,22 +18,89 @@ public enum NmzReward
 {
 	HERB_BOX(
 		"Herb box", ItemID.NZONE_HERBBOX, 9500,
-		Category.REWARD_CHEST, AfkNmzConfig::rewardHerbBox, AfkNmzConfig::rewardHerbBoxQuantity),
+		Category.REWARD_CHEST,
+		config -> config.rewardHerbBoxQuantity() > 0,
+		AfkNmzConfig::rewardHerbBoxQuantity),
 	SCROLL_OF_REDIRECTION(
 		"Scroll of redirection", ItemID.NZONE_REDIRECTION, 775,
-		Category.REWARD_CHEST, AfkNmzConfig::rewardRedirection, AfkNmzConfig::rewardRedirectionQuantity),
+		Category.REWARD_CHEST,
+		config -> config.rewardRedirectionQuantity() > 0,
+		AfkNmzConfig::rewardRedirectionQuantity),
 	SUPER_RANGING_DOSE(
 		"Super ranging (dose)", ItemID.NZONE1DOSE2RANGERSPOTION, 250,
-		Category.REWARD_CHEST, AfkNmzConfig::rewardSuperRanging, AfkNmzConfig::rewardSuperRangingQuantity),
+		Category.REWARD_CHEST,
+		config -> config.rewardSuperRangingQuantity() > 0,
+		AfkNmzConfig::rewardSuperRangingQuantity),
 	SUPER_MAGIC_DOSE(
 		"Super magic (dose)", ItemID.NZONE1DOSE2MAGICPOTION, 250,
-		Category.REWARD_CHEST, AfkNmzConfig::rewardSuperMagic, AfkNmzConfig::rewardSuperMagicQuantity),
+		Category.REWARD_CHEST,
+		config -> config.rewardSuperMagicQuantity() > 0,
+		AfkNmzConfig::rewardSuperMagicQuantity),
 	OVERLOAD_DOSE(
 		"Overload (dose)", ItemID.NZONE1DOSEOVERLOADPOTION, 1500,
-		Category.REWARD_CHEST, AfkNmzConfig::rewardOverload, AfkNmzConfig::rewardOverloadQuantity),
+		Category.REWARD_CHEST,
+		config -> config.rewardOverloadQuantity() > 0,
+		AfkNmzConfig::rewardOverloadQuantity),
 	ABSORPTION_DOSE(
 		"Absorption (dose)", ItemID.NZONE1DOSEABSORPTIONPOTION, 1000,
-		Category.REWARD_CHEST, AfkNmzConfig::rewardAbsorption, AfkNmzConfig::rewardAbsorptionQuantity),
+		Category.REWARD_CHEST,
+		config -> config.rewardAbsorptionQuantity() > 0,
+		AfkNmzConfig::rewardAbsorptionQuantity),
+	FLAX(
+		"Flax", ItemID.FLAX, 75,
+		Category.REWARD_CHEST,
+		config -> config.rewardFlaxQuantity() > 0,
+		AfkNmzConfig::rewardFlaxQuantity),
+	BUCKET_OF_SAND(
+		"Bucket of sand", ItemID.BUCKET_SAND, 200,
+		Category.REWARD_CHEST,
+		config -> config.rewardSandQuantity() > 0,
+		AfkNmzConfig::rewardSandQuantity),
+	SEAWEED(
+		"Seaweed", ItemID.SEAWEED, 200,
+		Category.REWARD_CHEST,
+		config -> config.rewardSeaweedQuantity() > 0,
+		AfkNmzConfig::rewardSeaweedQuantity),
+	COMPOST_POTION(
+		"Compost potion(4)", ItemID.SUPERCOMPOST_POTION_4, 5000,
+		Category.REWARD_CHEST,
+		config -> config.rewardCompostPotionQuantity() > 0,
+		AfkNmzConfig::rewardCompostPotionQuantity),
+	AIR_RUNE(
+		"Air rune", ItemID.AIRRUNE, 25,
+		Category.REWARD_CHEST,
+		config -> config.rewardAirRuneQuantity() > 0,
+		AfkNmzConfig::rewardAirRuneQuantity),
+	WATER_RUNE(
+		"Water rune", ItemID.WATERRUNE, 25,
+		Category.REWARD_CHEST,
+		config -> config.rewardWaterRuneQuantity() > 0,
+		AfkNmzConfig::rewardWaterRuneQuantity),
+	EARTH_RUNE(
+		"Earth rune", ItemID.EARTHRUNE, 25,
+		Category.REWARD_CHEST,
+		config -> config.rewardEarthRuneQuantity() > 0,
+		AfkNmzConfig::rewardEarthRuneQuantity),
+	FIRE_RUNE(
+		"Fire rune", ItemID.FIRERUNE, 25,
+		Category.REWARD_CHEST,
+		config -> config.rewardFireRuneQuantity() > 0,
+		AfkNmzConfig::rewardFireRuneQuantity),
+	RUNE_ESSENCE(
+		"Rune essence", ItemID.BLANKRUNE, 60,
+		Category.REWARD_CHEST,
+		config -> config.rewardRuneEssenceQuantity() > 0,
+		AfkNmzConfig::rewardRuneEssenceQuantity),
+	PURE_ESSENCE(
+		"Pure essence", ItemID.BLANKRUNE_HIGH, 70,
+		Category.REWARD_CHEST,
+		config -> config.rewardPureEssenceQuantity() > 0,
+		AfkNmzConfig::rewardPureEssenceQuantity),
+	VIAL_OF_WATER(
+		"Vial of water", ItemID.VIAL_WATER, 145,
+		Category.REWARD_CHEST,
+		config -> config.rewardVialOfWaterQuantity() > 0,
+		AfkNmzConfig::rewardVialOfWaterQuantity),
 	BLACK_MASK_I(
 		"Black mask (i)", ItemID.NZONE_BLACK_MASK, 1250000,
 		Category.IMBUE, AfkNmzConfig::imbueBlackMask, null),

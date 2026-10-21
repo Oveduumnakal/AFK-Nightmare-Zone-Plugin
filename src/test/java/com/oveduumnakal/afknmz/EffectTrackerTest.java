@@ -15,12 +15,15 @@ import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.Notifier;
+import net.runelite.client.config.Notification;
 import net.runelite.client.eventbus.EventBus;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -85,12 +88,12 @@ public class EffectTrackerTest
 		tracker.onGameTick(new GameTick());
 
 		assertEquals(150, state.getAbsorptionPoints());
-		verify(notifier).notify("Absorption points below: 200");
+		verify(notifier).notify(any(Notification.class), eq("Absorption points at or below 200"));
 
 		when(client.getVarbitValue(VarbitID.NZONE_ABSORB_POTION_EFFECTS)).thenReturn(0);
 		tracker.onGameTick(new GameTick());
 
-		verify(notifier).notify("Your absorption points have run out!");
+		verify(notifier).notify(any(Notification.class), eq("Your absorption points have run out!"));
 	}
 
 	@Test
@@ -102,7 +105,7 @@ public class EffectTrackerTest
 		tracker.onGameTick(new GameTick());
 
 		assertEquals(0, state.getAbsorptionPoints());
-		verify(notifier, never()).notify("Your absorption points have run out!");
+		verify(notifier, never()).notify(any(Notification.class), eq("Your absorption points have run out!"));
 	}
 
 	@Test
@@ -110,6 +113,6 @@ public class EffectTrackerTest
 	{
 		tracker.onGameTick(new GameTick());
 
-		verify(notifier, never()).notify(anyString());
+		verify(notifier, never()).notify(any(Notification.class), anyString());
 	}
 }

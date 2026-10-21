@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /** Tests the barrel mapping table. */
 public class NmzBarrelTest
@@ -35,5 +36,14 @@ public class NmzBarrelTest
 	public void unknownObjectIsEmpty()
 	{
 		assertFalse(NmzBarrel.forObjectId(-1).isPresent());
+	}
+
+	@Test
+	public void lowDoseFlagRespectsThresholdAndOff()
+	{
+		assertTrue(NmzBarrel.isLow(3, 3));
+		assertTrue(NmzBarrel.isLow(0, 3));
+		assertFalse(NmzBarrel.isLow(4, 3));
+		assertFalse(NmzBarrel.isLow(0, 0));
 	}
 }

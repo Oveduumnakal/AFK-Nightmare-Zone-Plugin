@@ -9,8 +9,6 @@ import javax.inject.Singleton;
 
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.Player;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.VarbitChanged;
@@ -28,12 +26,6 @@ import net.runelite.client.ui.overlay.OverlayManager;
 @Singleton
 public class PointsTracker
 {
-	/** Region of the dream instance, as used by the built-in Nightmare Zone plugin. */
-	private static final int NMZ_DREAM_REGION = 9033;
-
-	/** Region of the Yanille building where the dream is entered. */
-	private static final int NMZ_LOBBY_REGION = 10288;
-
 	private final Client client;
 	private final EventBus eventBus;
 	private final ConfigManager configManager;
@@ -49,6 +41,7 @@ public class PointsTracker
 	private int lastPoints = -1;
 	private boolean started;
 	private boolean wasInDream;
+	private boolean needsSeed;
 
 	@Inject
 	PointsTracker(Client client, EventBus eventBus, ConfigManager configManager, AfkNmzConfig config,
@@ -67,6 +60,7 @@ public class PointsTracker
 	{
 		Long saved = configManager.getConfiguration(AfkNmzConfig.GROUP, AfkNmzConfig.TOTAL_POINTS_KEY, Long.class);
 		persistedTotal = saved == null ? 0 : saved;
+		needsSeed = PointsMath.needsSeed(saved);
 		lifetimeGain = 0;
 		resetSession();
 		lastPoints = -1;
@@ -90,7 +84,7 @@ public class PointsTracker
 		if (points == lastPoints)
 			return;
 
-		int gain = inDream() ? PointsMath.gain(lastPoints, points) : 0;
+		int gain = NmzArea.inDream(client) ? PointsMath.gain(lastPoints, points) : 0;
 		lastPoints = points;
 		if (gain <= 0)
 			return;
@@ -104,9 +98,10 @@ public class PointsTracker
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
+		seedFromExistingPoints();
 		long now = System.currentTimeMillis();
-		boolean inDream = inDream();
-		if (started && inNmzArea() && lastClockMillis > 0)
+		boolean inDream = NmzArea.inDream(client);
+		if (started && NmzArea.inNmz(client) && lastClockMillis > 0)
 			elapsedMillis += now - lastClockMillis;
 
 		lastClockMillis = now;
@@ -144,6 +139,21 @@ public class PointsTracker
 		}
 	}
 
+	/**
+	 * On the first run there is no saved total, or only a zero, so the points the player already holds become the
+	 * starting total. Without this the total would ignore everything earned before the plugin was installed.
+	 */
+
+	private void seedFromExistingPoints()
+	{
+		if (!needsSeed || client.getGameState() != GameState.LOGGED_IN)
+			return;
+
+		needsSeed = false;
+		persistedTotal = Math.max(0, client.getVarbitValue(VarbitID.NZONE_CURRENTPOINTS));
+		persist();
+	}
+
 	private void resetSession()
 	{
 		sessionGain = 0;
@@ -161,34 +171,7 @@ public class PointsTracker
 	private void publish()
 	{
 		int current = Math.max(0, client.getVarbitValue(VarbitID.NZONE_CURRENTPOINTS));
-		overlay.update(inNmzArea(), current, sessionGain, persistedTotal + lifetimeGain,
+		overlay.update(NmzArea.inNmz(client), current, sessionGain, persistedTotal + lifetimeGain,
 			PointsMath.perHour(sessionGain, elapsedMillis));
-	}
-
-	private boolean inDream()
-	{
-		int[] regions = client.getTopLevelWorldView().getMapRegions();
-		if (regions == null)
-			return false;
-
-		for (int region : regions)
-			if (region == NMZ_DREAM_REGION)
-				return true;
-
-		return false;
-	}
-
-	private boolean inNmzArea()
-	{
-		if (inDream())
-			return true;
-
-		Player player = client.getLocalPlayer();
-		if (player == null)
-			return false;
-
-		WorldPoint location = player.getWorldLocation();
-
-		return location != null && location.getRegionID() == NMZ_LOBBY_REGION;
 	}
 }

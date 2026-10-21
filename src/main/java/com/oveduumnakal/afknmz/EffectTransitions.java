@@ -53,6 +53,25 @@ public class EffectTransitions
 	}
 
 	/**
+	 * Aligns the countdown with a remaining tick count read from the game. It starts a countdown when none is running,
+	 * and extends one that has fallen short by more than the tolerance; it never shortens, so a stale reading right
+	 * after a drink cannot cut the countdown.
+	 *
+	 * @param ticks remaining ticks according to the game
+	 * @param tolerance how far the countdown may be below the reading before it is extended
+	 */
+	public void syncOverload(int ticks, int tolerance)
+	{
+		if (ticks <= 0)
+			return;
+
+		if (overloadTicks <= 0)
+			seedOverload(ticks);
+		else if (ticks > overloadTicks + tolerance)
+			overloadTicks = ticks;
+	}
+
+	/**
 	 * Advances one game tick.
 	 *
 	 * @return true if the overload ran out on this tick

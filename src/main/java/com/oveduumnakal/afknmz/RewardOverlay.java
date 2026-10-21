@@ -7,41 +7,65 @@ package com.oveduumnakal.afknmz;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Rectangle;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import net.runelite.client.game.ItemManager;
+import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.ui.overlay.components.ComponentOrientation;
+import net.runelite.client.ui.overlay.components.ImageComponent;
 import net.runelite.client.ui.overlay.components.LineComponent;
-import net.runelite.client.ui.overlay.components.ProgressBarComponent;
-import net.runelite.client.ui.overlay.components.TitleComponent;
+import net.runelite.client.ui.overlay.components.SplitComponent;
 import net.runelite.client.util.QuantityFormatter;
 
 /**
- * Shows progress toward each ticked reward as "points / cost" lines, plus a bar for the combined goal. It only draws
- * while the tracker hands it a non-empty goal, which happens inside the NMZ lobby and dream.
+ * Shows each ticked reward as its item icon beside the reward name, the amount affordable and a progress bar, with a
+ * combined bar underneath when more than one reward is ticked. It only draws while the tracker hands it a non-empty
+ * goal, which happens inside the NMZ lobby and dream.
  */
 @Singleton
 public class RewardOverlay extends OverlayPanel
 {
+	private static final int PANEL_WIDTH = 250;
+	private static final int BORDER_SIZE = 3;
+	private static final int VERTICAL_GAP = 4;
+	private static final int ICON_GAP = 5;
 	private static final Color BAR_COLOR = new Color(60, 120, 200);
 	private static final Color BAR_DONE_COLOR = new Color(40, 150, 60);
+	private static final Color RUN_COLOR = new Color(230, 160, 40);
 	private static final Color BAR_BACKGROUND = new Color(61, 56, 49);
 
+	private final ItemManager itemManager;
+
 	private volatile RewardGoal goal;
+	private volatile long runPoints;
 
 	/** Creates the overlay in the top left corner. */
 	@Inject
-	RewardOverlay()
+	RewardOverlay(ItemManager itemManager)
 	{
+		this.itemManager = itemManager;
 		setPosition(OverlayPosition.TOP_LEFT);
 		setPriority(PRIORITY_MED);
+		panelComponent.setPreferredSize(new Dimension(PANEL_WIDTH, 0));
+		panelComponent.setBorder(new Rectangle(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE));
+		panelComponent.setGap(new Point(0, VERTICAL_GAP));
 	}
 
 	/** Sets the goal to draw, or null to hide the overlay. */
 	void setGoal(RewardGoal goal)
 	{
 		this.goal = goal;
+	}
+
+	/** Sets the points earned so far in the current dream, drawn as its own colour on each bar. */
+	void setRunPoints(long runPoints)
+	{
+		this.runPoints = runPoints;
 	}
 
 	@Override
@@ -51,42 +75,71 @@ public class RewardOverlay extends OverlayPanel
 		if (current == null || current.isEmpty())
 			return null;
 
-		TitleComponent title = TitleComponent.builder()
-			.text("NMZ rewards")
-			.build();
-		panelComponent.getChildren().add(title);
-
+		graphics.setFont(FontManager.getRunescapeSmallFont());
 		for (RewardGoal.Entry entry : current.getEntries())
-		{
-			long shown = Math.min(current.getPoints(), entry.getTotalCost());
-			String name = entry.getReward().getDisplayName();
-			if (entry.getQuantity() > 1)
-				name = entry.getQuantity() + " x " + name;
+			panelComponent.getChildren().add(entryRow(current, entry));
 
-			panelComponent.getChildren().add(LineComponent.builder()
-				.left(name)
-				.right(QuantityFormatter.quantityToStackSize(shown) + " / "
-					+ QuantityFormatter.quantityToStackSize(entry.getTotalCost()))
-				.rightColor(current.getProgress(entry) >= 1 ? Color.GREEN : Color.WHITE)
-				.build());
-		}
-
-		ProgressBarComponent bar = new ProgressBarComponent();
-		bar.setMinimum(0);
-		bar.setMaximum(current.getTotalCost());
-		bar.setValue(Math.min(current.getPoints(), current.getTotalCost()));
-		bar.setLabelDisplayMode(ProgressBarComponent.LabelDisplayMode.FULL);
-		bar.setForegroundColor(current.isAffordable() ? BAR_DONE_COLOR : BAR_COLOR);
-		bar.setBackgroundColor(BAR_BACKGROUND);
-		panelComponent.getChildren().add(bar);
-
-		panelComponent.getChildren().add(LineComponent.builder()
-			.left("Total")
-			.right(QuantityFormatter.formatNumber(current.getPoints()) + " / "
-				+ QuantityFormatter.formatNumber(current.getTotalCost()))
-			.rightColor(current.isAffordable() ? Color.GREEN : Color.WHITE)
-			.build());
+		if (current.getEntries().size() > 1)
+			panelComponent.getChildren().add(totalRow(current));
 
 		return super.render(graphics);
+	}
+
+	private SplitComponent entryRow(RewardGoal current, RewardGoal.Entry entry)
+	{
+		String amount = "";
+		if (entry.getQuantity() > 1)
+			amount = current.getItemsAffordable(entry) + "/" + entry.getQuantity();
+
+		LineComponent nameLine = LineComponent.builder()
+			.left(entry.getReward().getDisplayName())
+			.leftFont(FontManager.getRunescapeFont())
+			.right(amount)
+			.rightFont(FontManager.getRunescapeBoldFont())
+			.build();
+
+		OutlinedProgressBar bar = bar(current.getPoints(), entry.getTotalCost());
+
+		SplitComponent text = SplitComponent.builder()
+			.first(nameLine)
+			.second(bar)
+			.orientation(ComponentOrientation.VERTICAL)
+			.build();
+
+		return SplitComponent.builder()
+			.first(new ImageComponent(itemManager.getImage(entry.getReward().getItemId())))
+			.second(text)
+			.orientation(ComponentOrientation.HORIZONTAL)
+			.gap(new Point(ICON_GAP, 0))
+			.build();
+	}
+
+	private OutlinedProgressBar totalRow(RewardGoal current)
+	{
+		return bar(current.getPoints(), current.getTotalCost());
+	}
+
+	/**
+	 * Builds a bar for a cost: points banked before this dream in blue (green once they cover the cost), then the
+	 * points earned in this dream in their own colour.
+	 */
+	private OutlinedProgressBar bar(long points, long cost)
+	{
+		long shown = Math.min(points, cost);
+		long banked = Math.min(Math.max(0, points - runPoints), cost);
+		double scale = cost <= 0 ? 0 : 100.0 / cost;
+
+		OutlinedProgressBar bar = new OutlinedProgressBar();
+		bar.setForegroundColor(banked >= cost ? BAR_DONE_COLOR : BAR_COLOR);
+		bar.setRunColor(RUN_COLOR);
+		bar.setBackgroundColor(BAR_BACKGROUND);
+		bar.setValue(cost <= 0 ? 100 : banked * scale);
+		bar.setRunValue((shown - banked) * scale);
+		bar.setLeftLabel(QuantityFormatter.quantityToStackSize(shown));
+		bar.setRightLabel(QuantityFormatter.quantityToStackSize(cost));
+		if (cost > shown)
+			bar.setCenterLabel("(" + QuantityFormatter.quantityToStackSize(cost - shown) + ")");
+
+		return bar;
 	}
 }

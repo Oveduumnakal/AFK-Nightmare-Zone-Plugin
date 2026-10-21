@@ -4,8 +4,10 @@
  */
 package com.oveduumnakal.afknmz;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Shape;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Inject;
@@ -14,6 +16,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.Perspective;
 import net.runelite.api.Point;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -22,10 +25,9 @@ import net.runelite.client.ui.overlay.OverlayUtil;
 /** Draws the stored dose count centred on each potion barrel in the Nightmare Zone lobby. */
 public class BarrelOverlay extends Overlay
 {
-	/** Region id of the dream arena; barrels are never drawn there. */
-	static final int DREAM_REGION = 9033;
-
 	private static final int TEXT_Z_OFFSET = 40;
+	private static final int LINE_HEIGHT = 15;
+	private static final int TINT_ALPHA = 55;
 
 	private final Client client;
 	private final AfkNmzConfig config;
@@ -61,30 +63,43 @@ public class BarrelOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!config.showBarrelDoses() || isInDream())
+		if (!config.showBarrelDoses() || NmzArea.inDream(client))
 			return null;
 
 		for (Map.Entry<GameObject, NmzBarrel> entry : barrels.entrySet())
 		{
 			NmzBarrel barrel = entry.getValue();
-			String text = barrel.getLabel() + " " + client.getVarbitValue(barrel.getVarbitId());
-			Point point = Perspective.getCanvasTextLocation(
-				client, graphics, entry.getKey().getLocalLocation(), text, TEXT_Z_OFFSET);
-			if (point != null)
-				OverlayUtil.renderTextLocation(graphics, point, text, config.barrelTextColor());
+			LocalPoint location = entry.getKey().getLocalLocation();
+			if (config.tintBarrels())
+				tint(graphics, entry.getKey(), barrel.getTint());
+
+			int doses = client.getVarbitValue(barrel.getVarbitId());
+			Color doseColour = NmzBarrel.isLow(doses, config.lowDoseThreshold())
+				? config.lowDoseColor()
+				: config.barrelTextColor();
+			drawCentred(graphics, location, barrel.getLabel(), config.barrelTextColor(), 0);
+			drawCentred(graphics, location, String.valueOf(doses), doseColour, LINE_HEIGHT);
 		}
 
 		return null;
 	}
 
-	private boolean isInDream()
+	/** Fills the barrel's outline with a translucent shade of the given colour. */
+	private void tint(Graphics2D graphics, GameObject object, Color colour)
 	{
-		for (int region : client.getTopLevelWorldView().getMapRegions())
-		{
-			if (region == DREAM_REGION)
-				return true;
-		}
+		Shape hull = object.getConvexHull();
+		if (hull == null)
+			return;
 
-		return false;
+		graphics.setColor(new Color(colour.getRed(), colour.getGreen(), colour.getBlue(), TINT_ALPHA));
+		graphics.fill(hull);
+	}
+
+	/** Draws one line of text centred over the location, pushed down by the given number of pixels. */
+	private void drawCentred(Graphics2D graphics, LocalPoint location, String text, Color colour, int yShift)
+	{
+		Point point = Perspective.getCanvasTextLocation(client, graphics, location, text, TEXT_Z_OFFSET);
+		if (point != null)
+			OverlayUtil.renderTextLocation(graphics, new Point(point.getX(), point.getY() + yShift), text, colour);
 	}
 }

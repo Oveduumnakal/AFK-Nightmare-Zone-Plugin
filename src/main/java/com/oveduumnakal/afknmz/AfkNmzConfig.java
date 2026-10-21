@@ -10,6 +10,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Notification;
 import net.runelite.client.config.Range;
 
 /** Settings for the AFK Nightmare Zone plugin. */
@@ -35,9 +36,9 @@ public interface AfkNmzConfig extends Config
 		section = NOTIFICATIONS,
 		position = 0
 	)
-	default boolean overloadWarning()
+	default Notification overloadWarning()
 	{
-		return true;
+		return Notification.ON;
 	}
 
 	@Range(min = 5, max = 120)
@@ -60,21 +61,21 @@ public interface AfkNmzConfig extends Config
 		section = NOTIFICATIONS,
 		position = 2
 	)
-	default boolean overloadExpired()
+	default Notification overloadExpired()
 	{
-		return true;
+		return Notification.ON;
 	}
 
 	@ConfigItem(
 		keyName = "absorptionWarning",
 		name = "Absorption low",
-		description = "Notify when your absorption points drop to the threshold",
+		description = "Notify when your absorption points drop to or below the threshold",
 		section = NOTIFICATIONS,
 		position = 3
 	)
-	default boolean absorptionWarning()
+	default Notification absorptionWarning()
 	{
-		return true;
+		return Notification.ON;
 	}
 
 	@Range(min = 1, max = 1000)
@@ -97,9 +98,70 @@ public interface AfkNmzConfig extends Config
 		section = NOTIFICATIONS,
 		position = 5
 	)
-	default boolean absorptionExpired()
+	default Notification absorptionExpired()
 	{
-		return true;
+		return Notification.ON;
+	}
+
+	@ConfigItem(
+		keyName = "lowHpAlert",
+		name = "Low HP",
+		description = "Notify when your HP is at or below the threshold and no overload is active",
+		section = NOTIFICATIONS,
+		position = 6
+	)
+	default Notification lowHpAlert()
+	{
+		return Notification.ON;
+	}
+
+	@Range(min = 2, max = 99)
+	@ConfigItem(
+		keyName = "lowHpThreshold",
+		name = "Low HP threshold",
+		description = "Hitpoints at or below which to notify; ignored while an overload is active",
+		section = NOTIFICATIONS,
+		position = 7
+	)
+	default int lowHpThreshold()
+	{
+		return 15;
+	}
+
+	@ConfigItem(
+		keyName = "rangedBoostFaded",
+		name = "Ranged boost faded",
+		description = "Notify when a ranging boost has worn off",
+		section = NOTIFICATIONS,
+		position = 8
+	)
+	default Notification rangedBoostFaded()
+	{
+		return Notification.OFF;
+	}
+
+	@ConfigItem(
+		keyName = "magicBoostFaded",
+		name = "Magic boost faded",
+		description = "Notify when a magic boost has worn off",
+		section = NOTIFICATIONS,
+		position = 9
+	)
+	default Notification magicBoostFaded()
+	{
+		return Notification.OFF;
+	}
+
+	@ConfigItem(
+		keyName = "dreamEnded",
+		name = "Dream ended",
+		description = "Notify when you leave the dream, whether it finished or you died",
+		section = NOTIFICATIONS,
+		position = 10
+	)
+	default Notification dreamEnded()
+	{
+		return Notification.ON;
 	}
 
 	@ConfigSection(
@@ -122,6 +184,18 @@ public interface AfkNmzConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "tintBarrels",
+		name = "Tint barrels",
+		description = "Shade each barrel: green ranging, blue magic, black overload, white absorption",
+		section = BARRELS,
+		position = 2
+	)
+	default boolean tintBarrels()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "barrelTextColor",
 		name = "Dose text colour",
 		description = "Colour of the dose count text",
@@ -131,6 +205,31 @@ public interface AfkNmzConfig extends Config
 	default Color barrelTextColor()
 	{
 		return Color.WHITE;
+	}
+
+	@Range(min = 0, max = 100)
+	@ConfigItem(
+		keyName = "lowDoseThreshold",
+		name = "Low dose threshold",
+		description = "Show the dose count in the low dose colour at or below this many doses; 0 to turn off",
+		section = BARRELS,
+		position = 3
+	)
+	default int lowDoseThreshold()
+	{
+		return 3;
+	}
+
+	@ConfigItem(
+		keyName = "lowDoseColor",
+		name = "Low dose colour",
+		description = "Colour of the dose count when a barrel is running low",
+		section = BARRELS,
+		position = 4
+	)
+	default Color lowDoseColor()
+	{
+		return Color.RED;
 	}
 
 	@ConfigSection(
@@ -245,29 +344,36 @@ public interface AfkNmzConfig extends Config
 	}
 
 	@ConfigSection(
-		name = "Rewards",
-		description = "Track NMZ points toward reward shop purchases and imbues",
+		name = "Rewards - Shop",
+		description = "Track NMZ points toward reward shop purchases; set an amount above 0 to track an item",
 		position = 4
 	)
-	String REWARDS = "rewards";
+	String REWARDS_SHOP = "rewardsShop";
+
+	@ConfigSection(
+		name = "Rewards - Imbue",
+		description = "Track NMZ points toward imbuing items at the reward shop",
+		position = 5
+	)
+	String REWARDS_IMBUE = "rewardsImbue";
 
 	@ConfigItem(
 		keyName = "rewardNotify",
 		name = "Notify when affordable",
 		description = "Notify once when your points cover everything ticked below",
-		section = REWARDS,
+		section = REWARDS_SHOP,
 		position = 0
 	)
-	default boolean rewardNotify()
+	default Notification rewardNotify()
 	{
-		return true;
+		return Notification.ON;
 	}
 
 	@ConfigItem(
 		keyName = "hardDiscount",
 		name = "Hard CA reward claimed",
 		description = "Imbues cost half the points once the Hard Combat Achievements reward is claimed",
-		section = REWARDS,
+		section = REWARDS_IMBUE,
 		position = 1
 	)
 	default boolean hardDiscount()
@@ -275,162 +381,233 @@ public interface AfkNmzConfig extends Config
 		return false;
 	}
 
-	@ConfigItem(
-		keyName = "rewardHerbBox",
-		name = "Shop: Herb box",
-		description = "Track herb box (9,500 points each)",
-		section = REWARDS,
-		position = 2
-	)
-	default boolean rewardHerbBox()
-	{
-		return false;
-	}
-
-	@Range(min = 1, max = 100000)
+	@Range(min = 0, max = 100000)
 	@ConfigItem(
 		keyName = "rewardHerbBoxQuantity",
-		name = "Shop: Herb box amount",
-		description = "How many herb box to save for",
-		section = REWARDS,
+		name = "Herb Boxes",
+		description = "How many herb boxes to save for (9,500 points each); 0 to ignore",
+		section = REWARDS_SHOP,
 		position = 3
 	)
 	default int rewardHerbBoxQuantity()
 	{
-		return 1;
+		return 0;
 	}
 
-	@ConfigItem(
-		keyName = "rewardRedirection",
-		name = "Shop: Scroll of redirection",
-		description = "Track scroll of redirection (775 points each)",
-		section = REWARDS,
-		position = 4
-	)
-	default boolean rewardRedirection()
-	{
-		return false;
-	}
-
-	@Range(min = 1, max = 100000)
+	@Range(min = 0, max = 100000)
 	@ConfigItem(
 		keyName = "rewardRedirectionQuantity",
-		name = "Shop: Scroll of redirection amount",
-		description = "How many scroll of redirection to save for",
-		section = REWARDS,
+		name = "Scrolls of Redirection",
+		description = "How many scrolls of redirection to save for (775 points each); 0 to ignore",
+		section = REWARDS_SHOP,
 		position = 5
 	)
 	default int rewardRedirectionQuantity()
 	{
-		return 1;
+		return 0;
 	}
 
-	@ConfigItem(
-		keyName = "rewardSuperRanging",
-		name = "Shop: Super ranging dose",
-		description = "Track super ranging dose (250 points each)",
-		section = REWARDS,
-		position = 6
-	)
-	default boolean rewardSuperRanging()
-	{
-		return false;
-	}
-
-	@Range(min = 1, max = 100000)
+	@Range(min = 0, max = 100000)
 	@ConfigItem(
 		keyName = "rewardSuperRangingQuantity",
-		name = "Shop: Super ranging dose amount",
-		description = "How many super ranging dose to save for",
-		section = REWARDS,
+		name = "Super Ranging Doses",
+		description = "How many super ranging doses to save for (250 points each); 0 to ignore",
+		section = REWARDS_SHOP,
 		position = 7
 	)
 	default int rewardSuperRangingQuantity()
 	{
-		return 1;
+		return 0;
 	}
 
-	@ConfigItem(
-		keyName = "rewardSuperMagic",
-		name = "Shop: Super magic dose",
-		description = "Track super magic dose (250 points each)",
-		section = REWARDS,
-		position = 8
-	)
-	default boolean rewardSuperMagic()
-	{
-		return false;
-	}
-
-	@Range(min = 1, max = 100000)
+	@Range(min = 0, max = 100000)
 	@ConfigItem(
 		keyName = "rewardSuperMagicQuantity",
-		name = "Shop: Super magic dose amount",
-		description = "How many super magic dose to save for",
-		section = REWARDS,
+		name = "Super Magic Doses",
+		description = "How many super magic doses to save for (250 points each); 0 to ignore",
+		section = REWARDS_SHOP,
 		position = 9
 	)
 	default int rewardSuperMagicQuantity()
 	{
-		return 1;
+		return 0;
 	}
 
-	@ConfigItem(
-		keyName = "rewardOverload",
-		name = "Shop: Overload dose",
-		description = "Track overload dose (1,500 points each)",
-		section = REWARDS,
-		position = 10
-	)
-	default boolean rewardOverload()
-	{
-		return false;
-	}
-
-	@Range(min = 1, max = 100000)
+	@Range(min = 0, max = 100000)
 	@ConfigItem(
 		keyName = "rewardOverloadQuantity",
-		name = "Shop: Overload dose amount",
-		description = "How many overload dose to save for",
-		section = REWARDS,
+		name = "Overload Doses",
+		description = "How many overload doses to save for (1,500 points each); 0 to ignore",
+		section = REWARDS_SHOP,
 		position = 11
 	)
 	default int rewardOverloadQuantity()
 	{
-		return 1;
+		return 0;
 	}
 
-	@ConfigItem(
-		keyName = "rewardAbsorption",
-		name = "Shop: Absorption dose",
-		description = "Track absorption dose (1,000 points each)",
-		section = REWARDS,
-		position = 12
-	)
-	default boolean rewardAbsorption()
-	{
-		return false;
-	}
-
-	@Range(min = 1, max = 100000)
+	@Range(min = 0, max = 100000)
 	@ConfigItem(
 		keyName = "rewardAbsorptionQuantity",
-		name = "Shop: Absorption dose amount",
-		description = "How many absorption dose to save for",
-		section = REWARDS,
+		name = "Absorption Doses",
+		description = "How many absorption doses to save for (1,000 points each); 0 to ignore",
+		section = REWARDS_SHOP,
 		position = 13
 	)
 	default int rewardAbsorptionQuantity()
 	{
-		return 1;
+		return 0;
+	}
+
+	@Range(min = 0, max = 100000)
+	@ConfigItem(
+		keyName = "rewardFlaxQuantity",
+		name = "Flax",
+		description = "How many flax to save for (75 points each); 0 to ignore",
+		section = REWARDS_SHOP,
+		position = 14
+	)
+	default int rewardFlaxQuantity()
+	{
+		return 0;
+	}
+
+	@Range(min = 0, max = 100000)
+	@ConfigItem(
+		keyName = "rewardSandQuantity",
+		name = "Buckets of Sand",
+		description = "How many buckets of sand to save for (200 points each); 0 to ignore",
+		section = REWARDS_SHOP,
+		position = 15
+	)
+	default int rewardSandQuantity()
+	{
+		return 0;
+	}
+
+	@Range(min = 0, max = 100000)
+	@ConfigItem(
+		keyName = "rewardSeaweedQuantity",
+		name = "Seaweed",
+		description = "How many seaweed to save for (200 points each); 0 to ignore",
+		section = REWARDS_SHOP,
+		position = 16
+	)
+	default int rewardSeaweedQuantity()
+	{
+		return 0;
+	}
+
+	@Range(min = 0, max = 100000)
+	@ConfigItem(
+		keyName = "rewardCompostPotionQuantity",
+		name = "Compost Potions",
+		description = "How many compost potions to save for (5,000 points each); 0 to ignore",
+		section = REWARDS_SHOP,
+		position = 17
+	)
+	default int rewardCompostPotionQuantity()
+	{
+		return 0;
+	}
+
+	@Range(min = 0, max = 100000)
+	@ConfigItem(
+		keyName = "rewardAirRuneQuantity",
+		name = "Air Runes",
+		description = "How many air runes to save for (25 points each); 0 to ignore",
+		section = REWARDS_SHOP,
+		position = 18
+	)
+	default int rewardAirRuneQuantity()
+	{
+		return 0;
+	}
+
+	@Range(min = 0, max = 100000)
+	@ConfigItem(
+		keyName = "rewardWaterRuneQuantity",
+		name = "Water Runes",
+		description = "How many water runes to save for (25 points each); 0 to ignore",
+		section = REWARDS_SHOP,
+		position = 19
+	)
+	default int rewardWaterRuneQuantity()
+	{
+		return 0;
+	}
+
+	@Range(min = 0, max = 100000)
+	@ConfigItem(
+		keyName = "rewardEarthRuneQuantity",
+		name = "Earth Runes",
+		description = "How many earth runes to save for (25 points each); 0 to ignore",
+		section = REWARDS_SHOP,
+		position = 20
+	)
+	default int rewardEarthRuneQuantity()
+	{
+		return 0;
+	}
+
+	@Range(min = 0, max = 100000)
+	@ConfigItem(
+		keyName = "rewardFireRuneQuantity",
+		name = "Fire Runes",
+		description = "How many fire runes to save for (25 points each); 0 to ignore",
+		section = REWARDS_SHOP,
+		position = 21
+	)
+	default int rewardFireRuneQuantity()
+	{
+		return 0;
+	}
+
+	@Range(min = 0, max = 100000)
+	@ConfigItem(
+		keyName = "rewardRuneEssenceQuantity",
+		name = "Rune Essence",
+		description = "How many rune essence to save for (60 points each); 0 to ignore",
+		section = REWARDS_SHOP,
+		position = 22
+	)
+	default int rewardRuneEssenceQuantity()
+	{
+		return 0;
+	}
+
+	@Range(min = 0, max = 100000)
+	@ConfigItem(
+		keyName = "rewardPureEssenceQuantity",
+		name = "Pure Essence",
+		description = "How many pure essence to save for (70 points each); 0 to ignore",
+		section = REWARDS_SHOP,
+		position = 23
+	)
+	default int rewardPureEssenceQuantity()
+	{
+		return 0;
+	}
+
+	@Range(min = 0, max = 100000)
+	@ConfigItem(
+		keyName = "rewardVialOfWaterQuantity",
+		name = "Vials of Water",
+		description = "How many vials of water to save for (145 points each); 0 to ignore",
+		section = REWARDS_SHOP,
+		position = 24
+	)
+	default int rewardVialOfWaterQuantity()
+	{
+		return 0;
 	}
 
 	@ConfigItem(
 		keyName = "imbueBlackMask",
-		name = "Imbue: Black mask (i)",
+		name = "Black mask (i)",
 		description = "Track imbuing the black mask (1,250,000 points)",
-		section = REWARDS,
-		position = 14
+		section = REWARDS_IMBUE,
+		position = 25
 	)
 	default boolean imbueBlackMask()
 	{
@@ -439,10 +616,10 @@ public interface AfkNmzConfig extends Config
 
 	@ConfigItem(
 		keyName = "imbueSlayerHelm",
-		name = "Imbue: Slayer helmet (i)",
+		name = "Slayer helmet (i)",
 		description = "Track imbuing the slayer helmet (1,250,000 points)",
-		section = REWARDS,
-		position = 15
+		section = REWARDS_IMBUE,
+		position = 26
 	)
 	default boolean imbueSlayerHelm()
 	{
@@ -451,10 +628,10 @@ public interface AfkNmzConfig extends Config
 
 	@ConfigItem(
 		keyName = "imbueSalve",
-		name = "Imbue: Salve amulet (i)",
+		name = "Salve amulet (i)",
 		description = "Track imbuing the salve amulet (800,000 points)",
-		section = REWARDS,
-		position = 16
+		section = REWARDS_IMBUE,
+		position = 27
 	)
 	default boolean imbueSalve()
 	{
@@ -463,10 +640,10 @@ public interface AfkNmzConfig extends Config
 
 	@ConfigItem(
 		keyName = "imbueSalveE",
-		name = "Imbue: Salve amulet (ei)",
+		name = "Salve amulet (ei)",
 		description = "Track imbuing the elite (e) salve amulet (800,000 points)",
-		section = REWARDS,
-		position = 17
+		section = REWARDS_IMBUE,
+		position = 28
 	)
 	default boolean imbueSalveE()
 	{
@@ -475,10 +652,10 @@ public interface AfkNmzConfig extends Config
 
 	@ConfigItem(
 		keyName = "imbueSuffering",
-		name = "Imbue: Ring of suffering (i)",
+		name = "Ring of suffering (i)",
 		description = "Track imbuing the ring of suffering (725,000 points)",
-		section = REWARDS,
-		position = 18
+		section = REWARDS_IMBUE,
+		position = 29
 	)
 	default boolean imbueSuffering()
 	{
@@ -487,10 +664,10 @@ public interface AfkNmzConfig extends Config
 
 	@ConfigItem(
 		keyName = "imbueGods",
-		name = "Imbue: Ring of the gods (i)",
+		name = "Ring of the gods (i)",
 		description = "Track imbuing the ring of the gods (650,000 points)",
-		section = REWARDS,
-		position = 19
+		section = REWARDS_IMBUE,
+		position = 30
 	)
 	default boolean imbueGods()
 	{
@@ -499,10 +676,10 @@ public interface AfkNmzConfig extends Config
 
 	@ConfigItem(
 		keyName = "imbueBerserker",
-		name = "Imbue: Berserker ring (i)",
+		name = "Berserker ring (i)",
 		description = "Track imbuing the berserker ring (650,000 points)",
-		section = REWARDS,
-		position = 20
+		section = REWARDS_IMBUE,
+		position = 31
 	)
 	default boolean imbueBerserker()
 	{
@@ -511,10 +688,10 @@ public interface AfkNmzConfig extends Config
 
 	@ConfigItem(
 		keyName = "imbueWarrior",
-		name = "Imbue: Warrior ring (i)",
+		name = "Warrior ring (i)",
 		description = "Track imbuing the warrior ring (650,000 points)",
-		section = REWARDS,
-		position = 21
+		section = REWARDS_IMBUE,
+		position = 32
 	)
 	default boolean imbueWarrior()
 	{
@@ -523,10 +700,10 @@ public interface AfkNmzConfig extends Config
 
 	@ConfigItem(
 		keyName = "imbueArchers",
-		name = "Imbue: Archers ring (i)",
+		name = "Archers ring (i)",
 		description = "Track imbuing the archers ring (650,000 points)",
-		section = REWARDS,
-		position = 22
+		section = REWARDS_IMBUE,
+		position = 33
 	)
 	default boolean imbueArchers()
 	{
@@ -535,10 +712,10 @@ public interface AfkNmzConfig extends Config
 
 	@ConfigItem(
 		keyName = "imbueSeers",
-		name = "Imbue: Seers ring (i)",
+		name = "Seers ring (i)",
 		description = "Track imbuing the seers ring (650,000 points)",
-		section = REWARDS,
-		position = 23
+		section = REWARDS_IMBUE,
+		position = 34
 	)
 	default boolean imbueSeers()
 	{
@@ -547,10 +724,10 @@ public interface AfkNmzConfig extends Config
 
 	@ConfigItem(
 		keyName = "imbueTyrannical",
-		name = "Imbue: Tyrannical ring (i)",
+		name = "Tyrannical ring (i)",
 		description = "Track imbuing the tyrannical ring (650,000 points)",
-		section = REWARDS,
-		position = 24
+		section = REWARDS_IMBUE,
+		position = 35
 	)
 	default boolean imbueTyrannical()
 	{
@@ -559,10 +736,10 @@ public interface AfkNmzConfig extends Config
 
 	@ConfigItem(
 		keyName = "imbueTreasonous",
-		name = "Imbue: Treasonous ring (i)",
+		name = "Treasonous ring (i)",
 		description = "Track imbuing the treasonous ring (650,000 points)",
-		section = REWARDS,
-		position = 25
+		section = REWARDS_IMBUE,
+		position = 36
 	)
 	default boolean imbueTreasonous()
 	{
@@ -571,10 +748,10 @@ public interface AfkNmzConfig extends Config
 
 	@ConfigItem(
 		keyName = "imbueGranite",
-		name = "Imbue: Granite ring (i)",
+		name = "Granite ring (i)",
 		description = "Track imbuing the granite ring (500,000 points)",
-		section = REWARDS,
-		position = 26
+		section = REWARDS_IMBUE,
+		position = 37
 	)
 	default boolean imbueGranite()
 	{

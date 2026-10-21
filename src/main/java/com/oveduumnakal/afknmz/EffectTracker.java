@@ -4,7 +4,6 @@
  */
 package com.oveduumnakal.afknmz;
 
-import java.util.Arrays;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -27,9 +26,6 @@ import net.runelite.client.eventbus.Subscribe;
 @Singleton
 public class EffectTracker
 {
-	/** Map region of the inside of an NMZ dream. */
-	static final int[] NMZ_MAP_REGION = {9033};
-
 	/** Game message sent when an overload dose is drunk. */
 	static final String DRINK_MESSAGE = "You drink some of your overload potion.";
 
@@ -96,47 +92,46 @@ public class EffectTracker
 	@Subscribe
 	void onGameTick(GameTick event)
 	{
-		if (!isInDream())
+		if (client.getGameState() != GameState.LOGGED_IN || !NmzArea.inDream(client))
 		{
 			leaveDream();
 			return;
 		}
 
-		if (!inDream)
-		{
-			inDream = true;
-			seedFromVarbit();
-		}
+		inDream = true;
+		syncOverloadFromVarbit();
 
 		if (transitions.tick())
 			overloadExpired();
 
-		if (config.overloadWarning() && transitions.overloadWarningDue(config.overloadWarningSeconds()))
-			notifier.notify("Your overload potion is about to expire!");
+		if (transitions.overloadWarningDue(config.overloadWarningSeconds()))
+			notifier.notify(config.overloadWarning(), "Your overload potion is about to expire!");
 
 		int points = client.getVarbitValue(VarbitID.NZONE_ABSORB_POTION_EFFECTS);
 		EffectTransitions.AbsorptionEvent absorption =
 			transitions.updateAbsorption(points, config.absorptionThreshold());
-		if (absorption == EffectTransitions.AbsorptionEvent.LOW && config.absorptionWarning())
-			notifier.notify("Absorption points below: " + config.absorptionThreshold());
-		else if (absorption == EffectTransitions.AbsorptionEvent.DEPLETED && config.absorptionExpired())
-			notifier.notify("Your absorption points have run out!");
+		if (absorption == EffectTransitions.AbsorptionEvent.LOW)
+			notifier.notify(config.absorptionWarning(),
+				"Absorption points at or below " + config.absorptionThreshold());
+		else if (absorption == EffectTransitions.AbsorptionEvent.DEPLETED)
+			notifier.notify(config.absorptionExpired(), "Your absorption points have run out!");
 
 		publish(points);
 	}
 
 	private void overloadExpired()
 	{
-		if (config.overloadExpired())
-			notifier.notify("Your overload has worn off");
+		notifier.notify(config.overloadExpired(), "Your overload has worn off");
 	}
 
-	/** Picks up an overload already running when the plugin starts mid-dream, from the refreshes-remaining varbit. */
-	private void seedFromVarbit()
+	/**
+	 * Keeps the countdown in step with the refreshes-remaining varbit, so an overload that was already running when the
+	 * plugin started is picked up and a missed drink message cannot leave the guard thinking it has run out.
+	 */
+	private void syncOverloadFromVarbit()
 	{
 		int refreshes = client.getVarbitValue(VarbitID.NZONE_OVERLOAD_POTION_EFFECTS);
-		if (refreshes > 0 && !transitions.isOverloadActive())
-			transitions.seedOverload(refreshes * TICKS_PER_REFRESH);
+		transitions.syncOverload(refreshes * TICKS_PER_REFRESH, TICKS_PER_REFRESH);
 	}
 
 	private void publish(int points)
@@ -145,12 +140,6 @@ public class EffectTracker
 		state.setOverloadSettling(transitions.isSettling());
 		state.setOverloadSecondsRemaining(transitions.getOverloadSeconds());
 		state.setAbsorptionPoints(points);
-	}
-
-	private boolean isInDream()
-	{
-		return client.getGameState() == GameState.LOGGED_IN
-			&& Arrays.equals(client.getTopLevelWorldView().getMapRegions(), NMZ_MAP_REGION);
 	}
 
 	private void leaveDream()

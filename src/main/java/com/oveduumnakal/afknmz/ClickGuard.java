@@ -21,9 +21,6 @@ import net.runelite.client.eventbus.Subscribe;
 @Singleton
 public class ClickGuard
 {
-	/** Map region of the Nightmare Zone dream. */
-	static final int NMZ_REGION = 9033;
-
 	private static final long MESSAGE_INTERVAL_MS = 1000;
 
 	private final Client client;
@@ -58,7 +55,7 @@ public class ClickGuard
 	@Subscribe
 	public void onMenuOptionClicked(MenuOptionClicked event)
 	{
-		if (!inDream())
+		if (!NmzArea.inDream(client))
 			return;
 
 		String target = event.getMenuTarget();
@@ -83,21 +80,6 @@ public class ClickGuard
 			event.consume();
 			warn("AFK NMZ: blocked - would drop below " + config.minHp() + " HP.");
 		}
-	}
-
-	private boolean inDream()
-	{
-		int[] regions = client.getTopLevelWorldView().getMapRegions();
-		if (regions == null)
-			return false;
-
-		for (int region : regions)
-		{
-			if (region == NMZ_REGION)
-				return true;
-		}
-
-		return false;
 	}
 
 	private void warn(String message)

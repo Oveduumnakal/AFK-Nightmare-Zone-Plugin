@@ -56,4 +56,10 @@ final class PointsMath
 	{
 		return NumberFormat.getIntegerInstance(Locale.US).format(value);
 	}
+
+	/** Whether the lifetime total should be seeded from the points already held: nothing saved yet, or only a zero. */
+	static boolean needsSeed(Long saved)
+	{
+		return saved == null || saved == 0;
+	}
 }

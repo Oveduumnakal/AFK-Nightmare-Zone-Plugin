@@ -119,4 +119,35 @@ public class EffectTransitionsTest
 		assertFalse(transitions.isSettling());
 		assertEquals(AbsorptionEvent.NONE, transitions.updateAbsorption(0, 200));
 	}
+
+	@Test
+	public void syncStartsACountdownWhenNoneIsRunning()
+	{
+		transitions.syncOverload(100, 25);
+
+		assertTrue(transitions.isOverloadActive());
+		assertEquals(100, transitions.getOverloadTicks());
+		assertFalse(transitions.isSettling());
+	}
+
+	@Test
+	public void syncExtendsOnlyWhenWellShort()
+	{
+		transitions.seedOverload(100);
+		transitions.syncOverload(120, 25);
+		assertEquals(100, transitions.getOverloadTicks());
+
+		transitions.syncOverload(200, 25);
+		assertEquals(200, transitions.getOverloadTicks());
+	}
+
+	@Test
+	public void syncNeverShortensAndIgnoresZero()
+	{
+		transitions.seedOverload(100);
+		transitions.syncOverload(25, 25);
+		transitions.syncOverload(0, 25);
+
+		assertEquals(100, transitions.getOverloadTicks());
+	}
 }
