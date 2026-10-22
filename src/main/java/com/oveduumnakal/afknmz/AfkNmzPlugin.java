@@ -39,6 +39,12 @@ public class AfkNmzPlugin extends Plugin
 	@Inject
 	private AfkAlerts afkAlerts;
 
+	@Inject
+	private LobbyTracker lobbyTracker;
+
+	@Inject
+	private DominicMenu dominicMenu;
+
 	@Override
 	protected void startUp()
 	{
@@ -48,11 +54,15 @@ public class AfkNmzPlugin extends Plugin
 		clickGuard.start();
 		rewardTracker.start();
 		afkAlerts.start();
+		lobbyTracker.start();
+		dominicMenu.start();
 	}
 
 	@Override
 	protected void shutDown()
 	{
+		dominicMenu.stop();
+		lobbyTracker.stop();
 		afkAlerts.stop();
 		rewardTracker.stop();
 		clickGuard.stop();

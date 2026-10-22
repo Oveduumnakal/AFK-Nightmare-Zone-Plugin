@@ -48,6 +48,35 @@ public class EffectTransitionsTest
 	}
 
 	@Test
+	public void aHitKeepsTheSettlingWindowOpen()
+	{
+		transitions.drinkOverload();
+		for (int i = 0; i < EffectTransitions.SETTLE_TICKS - 1; i++)
+			transitions.tick();
+
+		transitions.extendSettle();
+		for (int i = 0; i < EffectTransitions.HIT_MARGIN_TICKS - 1; i++)
+			transitions.tick();
+
+		assertTrue(transitions.isSettling());
+		transitions.tick();
+
+		assertFalse(transitions.isSettling());
+	}
+
+	@Test
+	public void aHitAfterSettlingDoesNotReopenIt()
+	{
+		transitions.drinkOverload();
+		for (int i = 0; i < EffectTransitions.SETTLE_TICKS; i++)
+			transitions.tick();
+
+		transitions.extendSettle();
+
+		assertFalse(transitions.isSettling());
+	}
+
+	@Test
 	public void expiresExactlyOnce()
 	{
 		transitions.seedOverload(2);

@@ -53,10 +53,11 @@ public class PointsMathTest
 	}
 
 	@Test
-	public void seedsOnlyWhenNothingOrZeroIsSaved()
+	public void formatsDurationsWithHoursOnlyWhenNeeded()
 	{
-		assertTrue(PointsMath.needsSeed(null));
-		assertTrue(PointsMath.needsSeed(0L));
-		assertFalse(PointsMath.needsSeed(1L));
+		assertEquals("0:00", PointsMath.formatDuration(0));
+		assertEquals("4:07", PointsMath.formatDuration(247_900));
+		assertEquals("1:02:09", PointsMath.formatDuration(3_729_000));
+		assertEquals("0:00", PointsMath.formatDuration(-5));
 	}
 }

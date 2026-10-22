@@ -16,6 +16,16 @@ you from misclicking a locator orb or rock cake at the wrong moment.
   Get a notification shortly before your overload runs out (you choose how many seconds ahead), when it has expired,
   when your absorption points fall to a level you pick, and when they hit zero.
 
+- **Out-of-potions and power-up alerts**
+
+  Get told when your inventory runs out of overload or absorption doses, and (optionally) when a power surge,
+  recurrent damage, zapper or ultimate force power-up spawns.
+
+- **Live dream readout**
+
+  An overlay inside the dream shows your overload timer, counting smoothly in tenths of a second, and your absorption
+  points. Both turn red when they are low.
+
 ### Before you enter
 
 - **Dose counts on the barrels**

@@ -36,34 +36,34 @@ final class AlertLogic
 		}
 	}
 
-	/** Fires once when a stat boost that was present drops to nothing. */
-	static final class BoostFade
+	/** Fires once when a count that was positive drops to zero, such as a stat boost or a stack of potions. */
+	static final class DropToZero
 	{
-		private boolean hadBoost;
+		private boolean hadPositive;
 
 		/**
-		 * Feeds the current boost, which is boosted level minus real level.
+		 * Feeds the current count.
 		 *
-		 * @return true on the update where the boost ran out
+		 * @return true on the update where the count fell to zero
 		 */
-		boolean update(int boost)
+		boolean update(int count)
 		{
-			if (boost > 0)
+			if (count > 0)
 			{
-				hadBoost = true;
+				hadPositive = true;
 				return false;
 			}
 
-			boolean faded = hadBoost;
-			hadBoost = false;
+			boolean dropped = hadPositive;
+			hadPositive = false;
 
-			return faded;
+			return dropped;
 		}
 
-		/** Forgets any boost seen so far. */
+		/** Forgets any positive count seen so far. */
 		void reset()
 		{
-			hadBoost = false;
+			hadPositive = false;
 		}
 	}
 
@@ -71,5 +71,17 @@ final class AlertLogic
 	static boolean lowHp(int hp, int threshold, boolean overloadActive)
 	{
 		return !overloadActive && hp <= threshold;
+	}
+
+	/** Whether the overload countdown is at or under the warning lead time. */
+	static boolean overloadLow(long remainingMillis, int warnSeconds)
+	{
+		return remainingMillis <= warnSeconds * 1000L;
+	}
+
+	/** Whether absorption points are at or under the warning threshold. */
+	static boolean absorptionLow(int points, int threshold)
+	{
+		return points <= threshold;
 	}
 }

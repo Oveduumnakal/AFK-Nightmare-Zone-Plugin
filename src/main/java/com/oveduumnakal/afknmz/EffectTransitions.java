@@ -16,8 +16,14 @@ public class EffectTransitions
 	/** An overload potion lasts 5 minutes, which is 500 game ticks. */
 	static final int OVERLOAD_TICKS = 500;
 
-	/** Ticks after drinking during which the 5 self-damage hits are still landing (5 hits plus one tick margin). */
-	static final int SETTLE_TICKS = 6;
+	/**
+	 * Ticks after drinking during which the self-damage hits are still landing. Unverified in game: sized for 5 hits
+	 * up to 3 ticks apart, plus margin, since a shorter window let rock cake clicks through mid-damage.
+	 */
+	static final int SETTLE_TICKS = 14;
+
+	/** Ticks the settling window stays open after the player is hit while it is open. */
+	static final int HIT_MARGIN_TICKS = 5;
 
 	/** What changed about absorption on an update. */
 	public enum AbsorptionEvent
@@ -42,6 +48,16 @@ public class EffectTransitions
 		overloadTicks = OVERLOAD_TICKS;
 		settleTicks = SETTLE_TICKS;
 		warned = false;
+	}
+
+	/**
+	 * Keeps the settling window open for a few more ticks because the player was just hit. It does nothing once the
+	 * window has closed, so hits taken later from monsters cannot reopen it.
+	 */
+	public void extendSettle()
+	{
+		if (settleTicks > 0)
+			settleTicks = Math.max(settleTicks, HIT_MARGIN_TICKS);
 	}
 
 	/** Starts a countdown with a known remaining tick count, without a settling window. */

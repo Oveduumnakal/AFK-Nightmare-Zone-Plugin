@@ -17,6 +17,7 @@ import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.Notifier;
 import net.runelite.client.config.Notification;
 import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.ui.overlay.OverlayManager;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -36,6 +37,8 @@ public class EffectTrackerTest
 	private WorldView worldView;
 	private Notifier notifier;
 	private EffectState state;
+	private OverlayManager overlayManager;
+	private EffectOverlay overlay;
 	private EffectTracker tracker;
 
 	@Before
@@ -48,9 +51,11 @@ public class EffectTrackerTest
 		state = new EffectState();
 		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
 		when(worldView.getMapRegions()).thenReturn(new int[] {9033});
-		tracker = new EffectTracker(client, mock(EventBus.class), notifier, new AfkNmzConfig()
+		overlayManager = mock(OverlayManager.class);
+		overlay = mock(EffectOverlay.class);
+		tracker = new EffectTracker(client, mock(EventBus.class), overlayManager, notifier, new AfkNmzConfig()
 		{
-		}, state);
+		}, state, overlay);
 	}
 
 	private void drink()
@@ -114,5 +119,39 @@ public class EffectTrackerTest
 		tracker.onGameTick(new GameTick());
 
 		verify(notifier, never()).notify(any(Notification.class), anyString());
+	}
+
+	@Test
+	public void drinkPublishesSmoothCountdown()
+	{
+		tracker.onGameTick(new GameTick());
+		drink();
+		tracker.onGameTick(new GameTick());
+
+		Countdown countdown = state.getOverloadCountdown();
+		assertTrue(countdown.isRunning());
+		assertEquals(499, countdown.getTicks());
+	}
+
+	@Test
+	public void leavingDreamClearsCountdown()
+	{
+		tracker.onGameTick(new GameTick());
+		drink();
+		tracker.onGameTick(new GameTick());
+		when(worldView.getMapRegions()).thenReturn(new int[] {1234});
+		tracker.onGameTick(new GameTick());
+
+		assertFalse(state.getOverloadCountdown().isRunning());
+	}
+
+	@Test
+	public void startAndStopManageTheOverlay()
+	{
+		tracker.start();
+		verify(overlayManager).add(overlay);
+
+		tracker.stop();
+		verify(overlayManager).remove(overlay);
 	}
 }

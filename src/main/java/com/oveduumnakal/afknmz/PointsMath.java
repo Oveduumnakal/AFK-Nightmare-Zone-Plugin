@@ -47,6 +47,23 @@ final class PointsMath
 	}
 
 	/**
+	 * Formats a length of time as minutes and seconds, adding hours once there are any.
+	 *
+	 * @param millis the length of time in milliseconds
+	 * @return the text, for example {@code 4:07} or {@code 1:02:09}
+	 */
+	static String formatDuration(long millis)
+	{
+		long seconds = Math.max(0, millis) / 1000;
+		long hours = seconds / 3600;
+		long minutes = seconds % 3600 / 60;
+		if (hours > 0)
+			return String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds % 60);
+
+		return String.format(Locale.US, "%d:%02d", minutes, seconds % 60);
+	}
+
+	/**
 	 * Formats a number with thousands separators.
 	 *
 	 * @param value the number to format
@@ -55,11 +72,5 @@ final class PointsMath
 	static String format(long value)
 	{
 		return NumberFormat.getIntegerInstance(Locale.US).format(value);
-	}
-
-	/** Whether the lifetime total should be seeded from the points already held: nothing saved yet, or only a zero. */
-	static boolean needsSeed(Long saved)
-	{
-		return saved == null || saved == 0;
 	}
 }

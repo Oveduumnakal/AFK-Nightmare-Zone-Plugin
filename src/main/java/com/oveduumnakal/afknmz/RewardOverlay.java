@@ -34,20 +34,25 @@ public class RewardOverlay extends OverlayPanel
 	private static final int BORDER_SIZE = 3;
 	private static final int VERTICAL_GAP = 4;
 	private static final int ICON_GAP = 5;
-	private static final Color BAR_COLOR = new Color(60, 120, 200);
-	private static final Color BAR_DONE_COLOR = new Color(40, 150, 60);
-	private static final Color RUN_COLOR = new Color(230, 160, 40);
+	private static final Color BAR_EDGE = new Color(0, 0, 12);
+	private static final Color BAR_CENTER = new Color(18, 32, 175);
+	private static final Color DONE_EDGE = new Color(10, 70, 25);
+	private static final Color DONE_CENTER = new Color(25, 165, 55);
+	private static final Color RUN_EDGE = new Color(35, 45, 190);
+	private static final Color RUN_CENTER = new Color(140, 55, 205);
 	private static final Color BAR_BACKGROUND = new Color(61, 56, 49);
 
 	private final ItemManager itemManager;
+	private final DefaultPlacement placement;
 
 	private volatile RewardGoal goal;
 	private volatile long runPoints;
 
 	/** Creates the overlay in the top left corner. */
 	@Inject
-	RewardOverlay(ItemManager itemManager)
+	RewardOverlay(ItemManager itemManager, DefaultPlacement placement)
 	{
+		this.placement = placement;
 		this.itemManager = itemManager;
 		setPosition(OverlayPosition.TOP_LEFT);
 		setPriority(PRIORITY_MED);
@@ -75,12 +80,16 @@ public class RewardOverlay extends OverlayPanel
 		if (current == null || current.isEmpty())
 			return null;
 
+		placement.place(this, 2);
 		graphics.setFont(FontManager.getRunescapeSmallFont());
 		for (RewardGoal.Entry entry : current.getEntries())
 			panelComponent.getChildren().add(entryRow(current, entry));
 
 		if (current.getEntries().size() > 1)
+		{
+			panelComponent.getChildren().add(new VerticalSpacer());
 			panelComponent.getChildren().add(totalRow(current));
+		}
 
 		return super.render(graphics);
 	}
@@ -130,15 +139,19 @@ public class RewardOverlay extends OverlayPanel
 		double scale = cost <= 0 ? 0 : 100.0 / cost;
 
 		OutlinedProgressBar bar = new OutlinedProgressBar();
-		bar.setForegroundColor(banked >= cost ? BAR_DONE_COLOR : BAR_COLOR);
-		bar.setRunColor(RUN_COLOR);
+		if (banked >= cost)
+			bar.setForegroundGradient(DONE_EDGE, DONE_CENTER);
+		else
+			bar.setForegroundGradient(BAR_EDGE, BAR_CENTER);
+
+		bar.setRunGradient(RUN_EDGE, RUN_CENTER);
 		bar.setBackgroundColor(BAR_BACKGROUND);
 		bar.setValue(cost <= 0 ? 100 : banked * scale);
 		bar.setRunValue((shown - banked) * scale);
 		bar.setLeftLabel(QuantityFormatter.quantityToStackSize(shown));
 		bar.setRightLabel(QuantityFormatter.quantityToStackSize(cost));
-		if (cost > shown)
-			bar.setCenterLabel("(" + QuantityFormatter.quantityToStackSize(cost - shown) + ")");
+		long tenths = cost <= 0 ? 1000 : shown * 1000 / cost;
+		bar.setCenterLabel(tenths / 10 + "." + tenths % 10 + "%");
 
 		return bar;
 	}

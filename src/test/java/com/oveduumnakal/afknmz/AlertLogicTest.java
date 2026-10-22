@@ -35,9 +35,9 @@ public class AlertLogicTest
 	}
 
 	@Test
-	public void boostFadeNeedsABoostFirst()
+	public void dropToZeroNeedsAPositiveFirst()
 	{
-		AlertLogic.BoostFade fade = new AlertLogic.BoostFade();
+		AlertLogic.DropToZero fade = new AlertLogic.DropToZero();
 
 		assertFalse(fade.update(0));
 		assertFalse(fade.update(10));
@@ -47,9 +47,9 @@ public class AlertLogicTest
 	}
 
 	@Test
-	public void boostFadeRearmsOnNewBoost()
+	public void dropToZeroRearmsOnNewPositive()
 	{
-		AlertLogic.BoostFade fade = new AlertLogic.BoostFade();
+		AlertLogic.DropToZero fade = new AlertLogic.DropToZero();
 		fade.update(5);
 		fade.update(0);
 		fade.update(5);
@@ -64,5 +64,43 @@ public class AlertLogicTest
 		assertTrue(AlertLogic.lowHp(15, 15, false));
 		assertFalse(AlertLogic.lowHp(16, 15, false));
 		assertFalse(AlertLogic.lowHp(1, 15, true));
+	}
+
+	@Test
+	public void dropToZeroTracksPotionStacks()
+	{
+		AlertLogic.DropToZero supply = new AlertLogic.DropToZero();
+
+		assertFalse(supply.update(0));
+		assertFalse(supply.update(3));
+		assertFalse(supply.update(1));
+		assertTrue(supply.update(0));
+		assertFalse(supply.update(0));
+	}
+
+	@Test
+	public void dropToZeroResetForgetsPositive()
+	{
+		AlertLogic.DropToZero supply = new AlertLogic.DropToZero();
+		supply.update(2);
+		supply.reset();
+
+		assertFalse(supply.update(0));
+	}
+
+	@Test
+	public void overloadLowAtOrUnderLeadTime()
+	{
+		assertTrue(AlertLogic.overloadLow(30_000, 30));
+		assertTrue(AlertLogic.overloadLow(0, 30));
+		assertFalse(AlertLogic.overloadLow(30_001, 30));
+	}
+
+	@Test
+	public void absorptionLowAtOrUnderThreshold()
+	{
+		assertTrue(AlertLogic.absorptionLow(200, 200));
+		assertTrue(AlertLogic.absorptionLow(0, 200));
+		assertFalse(AlertLogic.absorptionLow(201, 200));
 	}
 }

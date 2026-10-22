@@ -17,6 +17,7 @@ public class EffectState
 	private volatile boolean overloadSettling;
 	private volatile int overloadSecondsRemaining;
 	private volatile int absorptionPoints;
+	private volatile Countdown overloadCountdown = Countdown.NONE;
 
 	/** Whether an overload potion's effect is currently running. */
 	public boolean isOverloadActive()
@@ -42,6 +43,12 @@ public class EffectState
 		return absorptionPoints;
 	}
 
+	/** The overload countdown, which can be evaluated at any moment for a smooth readout. */
+	Countdown getOverloadCountdown()
+	{
+		return overloadCountdown;
+	}
+
 	void setOverloadActive(boolean overloadActive)
 	{
 		this.overloadActive = overloadActive;
@@ -62,6 +69,11 @@ public class EffectState
 		this.absorptionPoints = absorptionPoints;
 	}
 
+	void setOverloadCountdown(Countdown overloadCountdown)
+	{
+		this.overloadCountdown = overloadCountdown;
+	}
+
 	/** Clears everything, for leaving the dream or logging out. */
 	void reset()
 	{
@@ -69,5 +81,6 @@ public class EffectState
 		overloadSettling = false;
 		overloadSecondsRemaining = 0;
 		absorptionPoints = 0;
+		overloadCountdown = Countdown.NONE;
 	}
 }

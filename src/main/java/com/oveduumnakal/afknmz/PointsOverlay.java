@@ -13,21 +13,24 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 
-/** Panel listing current, session and lifetime NMZ points plus the hourly rate, fed by {@link PointsTracker}. */
+/** Panel listing current points, the dream's points and time, and the hourly rate, fed by {@link PointsTracker}. */
 public class PointsOverlay extends OverlayPanel
 {
 	private final AfkNmzConfig config;
+	private final DefaultPlacement placement;
 
 	private volatile boolean inNmz;
+	private volatile boolean inDream;
 	private volatile int current;
-	private volatile long session;
-	private volatile long total;
+	private volatile long dream;
+	private volatile long dreamStartMillis;
 	private volatile long perHour;
 
 	@Inject
-	PointsOverlay(AfkNmzConfig config)
+	PointsOverlay(AfkNmzConfig config, DefaultPlacement placement)
 	{
 		this.config = config;
+		this.placement = placement;
 		setPosition(OverlayPosition.TOP_LEFT);
 	}
 
@@ -35,17 +38,19 @@ public class PointsOverlay extends OverlayPanel
 	 * Stores the latest figures to draw.
 	 *
 	 * @param inNmz whether the player is in the dream or its lobby
+	 * @param inDream whether the player is inside a dream
 	 * @param current points currently held
-	 * @param session points gained this session
-	 * @param total lifetime points gained
-	 * @param perHour session points per hour
+	 * @param dream points gained in the dream in progress
+	 * @param dreamStartMillis clock time the dream began, or 0 when none is running
+	 * @param perHour the dream's points per hour
 	 */
-	void update(boolean inNmz, int current, long session, long total, long perHour)
+	void update(boolean inNmz, boolean inDream, int current, long dream, long dreamStartMillis, long perHour)
 	{
 		this.inNmz = inNmz;
+		this.inDream = inDream;
 		this.current = current;
-		this.session = session;
-		this.total = total;
+		this.dream = dream;
+		this.dreamStartMillis = dreamStartMillis;
 		this.perHour = perHour;
 	}
 
@@ -55,13 +60,15 @@ public class PointsOverlay extends OverlayPanel
 		if (!config.showPointsOverlay() || !inNmz)
 			return null;
 
+		placement.place(this, 0);
 		panelComponent.getChildren().add(TitleComponent.builder()
 			.text("NMZ Points")
 			.build());
 		addLine("Current:", PointsMath.format(current), true);
-		addLine("Session:", PointsMath.format(session), config.showSessionPoints());
-		addLine("Total:", PointsMath.format(total), config.showTotalPoints());
-		addLine("Points/hr:", PointsMath.format(perHour), config.showPointsPerHour());
+		addLine("Dream:", PointsMath.format(dream), inDream && config.showSessionPoints());
+		addLine("Points/hr:", PointsMath.format(perHour), inDream && config.showPointsPerHour());
+		long elapsed = dreamStartMillis > 0 ? System.currentTimeMillis() - dreamStartMillis : 0;
+		addLine("Dream Time:", PointsMath.formatDuration(elapsed), inDream && config.showDreamTime());
 
 		return super.render(graphics);
 	}

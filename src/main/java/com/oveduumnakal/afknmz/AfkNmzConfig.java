@@ -19,9 +19,6 @@ public interface AfkNmzConfig extends Config
 {
 	String GROUP = "afknmz";
 
-	/** Config key holding the lifetime points total; not shown in the settings panel. */
-	String TOTAL_POINTS_KEY = "totalPoints";
-
 	@ConfigSection(
 		name = "Notifications",
 		description = "Alerts for overload and absorption expiring",
@@ -164,10 +161,137 @@ public interface AfkNmzConfig extends Config
 		return Notification.ON;
 	}
 
+	@ConfigItem(
+		keyName = "outOfOverload",
+		name = "Out of overload",
+		description = "Notify when your inventory has no overload doses left",
+		section = NOTIFICATIONS,
+		position = 11
+	)
+	default Notification outOfOverload()
+	{
+		return Notification.ON;
+	}
+
+	@ConfigItem(
+		keyName = "outOfAbsorption",
+		name = "Out of absorption",
+		description = "Notify when your inventory has no absorption doses left",
+		section = NOTIFICATIONS,
+		position = 12
+	)
+	default Notification outOfAbsorption()
+	{
+		return Notification.ON;
+	}
+
+	@ConfigItem(
+		keyName = "powerSurge",
+		name = "Power surge spawned",
+		description = "Notify when a power surge power-up spawns",
+		section = NOTIFICATIONS,
+		position = 13
+	)
+	default Notification powerSurge()
+	{
+		return Notification.OFF;
+	}
+
+	@ConfigItem(
+		keyName = "recurrentDamage",
+		name = "Recurrent damage spawned",
+		description = "Notify when a recurrent damage power-up spawns",
+		section = NOTIFICATIONS,
+		position = 14
+	)
+	default Notification recurrentDamage()
+	{
+		return Notification.OFF;
+	}
+
+	@ConfigItem(
+		keyName = "zapper",
+		name = "Zapper spawned",
+		description = "Notify when a zapper power-up spawns",
+		section = NOTIFICATIONS,
+		position = 15
+	)
+	default Notification zapper()
+	{
+		return Notification.OFF;
+	}
+
+	@ConfigItem(
+		keyName = "ultimateForce",
+		name = "Ultimate force spawned",
+		description = "Notify when an ultimate force power-up spawns",
+		section = NOTIFICATIONS,
+		position = 16
+	)
+	default Notification ultimateForce()
+	{
+		return Notification.OFF;
+	}
+
+	@ConfigSection(
+		name = "Dream Overlay",
+		description = "Live overload and absorption readout inside the dream",
+		position = 1
+	)
+	String DREAM_OVERLAY = "dreamOverlay";
+
+	@ConfigItem(
+		keyName = "showDreamOverlay",
+		name = "Show dream overlay",
+		description = "Show the overload timer and absorption points while in the dream",
+		section = DREAM_OVERLAY,
+		position = 0
+	)
+	default boolean showDreamOverlay()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showOverloadTimer",
+		name = "Overload timer",
+		description = "Show the time left on your overload, counting in tenths of a second",
+		section = DREAM_OVERLAY,
+		position = 1
+	)
+	default boolean showOverloadTimer()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showAbsorptionPoints",
+		name = "Absorption points",
+		description = "Show your remaining absorption points",
+		section = DREAM_OVERLAY,
+		position = 2
+	)
+	default boolean showAbsorptionPoints()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "hideBuiltInAbsorption",
+		name = "Hide built-in display",
+		description = "Hide the game's own absorption readout inside the dream, since this overlay replaces it",
+		section = DREAM_OVERLAY,
+		position = 3
+	)
+	default boolean hideBuiltInAbsorption()
+	{
+		return true;
+	}
+
 	@ConfigSection(
 		name = "Barrels",
 		description = "Dose counts on the potion barrels in the lobby",
-		position = 1
+		position = 2
 	)
 	String BARRELS = "barrels";
 
@@ -235,7 +359,7 @@ public interface AfkNmzConfig extends Config
 	@ConfigSection(
 		name = "Points",
 		description = "Nightmare Zone points overlay",
-		position = 2
+		position = 3
 	)
 	String POINTS = "points";
 
@@ -253,8 +377,8 @@ public interface AfkNmzConfig extends Config
 
 	@ConfigItem(
 		keyName = "showSessionPoints",
-		name = "Session points",
-		description = "Points earned since the plugin started or the session was reset",
+		name = "Dream points",
+		description = "Points earned in the dream you are in; cleared when you leave or die",
 		section = POINTS,
 		position = 1
 	)
@@ -264,23 +388,11 @@ public interface AfkNmzConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showTotalPoints",
-		name = "Total points",
-		description = "Lifetime points earned while this plugin was running",
-		section = POINTS,
-		position = 2
-	)
-	default boolean showTotalPoints()
-	{
-		return true;
-	}
-
-	@ConfigItem(
 		keyName = "showPointsPerHour",
 		name = "Points per hour",
-		description = "Session points divided by session time",
+		description = "This dream's points divided by its running time",
 		section = POINTS,
-		position = 3
+		position = 2
 	)
 	default boolean showPointsPerHour()
 	{
@@ -288,21 +400,21 @@ public interface AfkNmzConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "resetSession",
-		name = "Reset session",
-		description = "Tick to reset the session points and timer; it untoggles itself",
+		keyName = "showDreamTime",
+		name = "Dream time",
+		description = "How long the dream you are in has been running",
 		section = POINTS,
-		position = 4
+		position = 3
 	)
-	default boolean resetSession()
+	default boolean showDreamTime()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigSection(
 		name = "Click Guards",
 		description = "Block locator orb and dwarven rock cake clicks that would be unsafe",
-		position = 3
+		position = 4
 	)
 	String GUARDS = "guards";
 
@@ -346,14 +458,14 @@ public interface AfkNmzConfig extends Config
 	@ConfigSection(
 		name = "Rewards - Shop",
 		description = "Track NMZ points toward reward shop purchases; set an amount above 0 to track an item",
-		position = 4
+		position = 5
 	)
 	String REWARDS_SHOP = "rewardsShop";
 
 	@ConfigSection(
 		name = "Rewards - Imbue",
 		description = "Track NMZ points toward imbuing items at the reward shop",
-		position = 5
+		position = 6
 	)
 	String REWARDS_IMBUE = "rewardsImbue";
 
@@ -756,5 +868,61 @@ public interface AfkNmzConfig extends Config
 	default boolean imbueGranite()
 	{
 		return false;
+	}
+
+	@ConfigSection(
+		name = "Lobby",
+		description = "The coffer and Rumble party readouts in the lobby",
+		position = 7
+	)
+	String LOBBY = "lobby";
+
+	@ConfigItem(
+		keyName = "showCofferOverhead",
+		name = "Coffer above Dominic's coffer",
+		description = "Draw the coffer's coins, or a locked notice, above Dominic's coffer in place of the game's",
+		section = LOBBY,
+		position = 0
+	)
+	default boolean showCofferOverhead()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showRumbleParty",
+		name = "Rumble party panel",
+		description = "Show your Rumble party once someone besides you has joined, in place of the game's",
+		section = LOBBY,
+		position = 1
+	)
+	default boolean showRumbleParty()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "highlightEmptyVial",
+		name = "Highlight empty vial",
+		description = "Until a dream is chosen, outline the vial in red with a \"Select a Dream\" label and Dominic in "
+			+ "green",
+		section = LOBBY,
+		position = 3
+	)
+	default boolean highlightEmptyVial()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "dominicDreamFirst",
+		name = "Dominic: Dream first",
+		description = "Make Dream the left-click option on Dominic",
+		section = LOBBY,
+		position = 4
+	)
+	default boolean dominicDreamFirst()
+	{
+		return true;
 	}
 }

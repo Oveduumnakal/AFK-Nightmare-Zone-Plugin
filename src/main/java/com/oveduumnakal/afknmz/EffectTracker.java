@@ -10,13 +10,18 @@ import javax.inject.Singleton;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.events.BeforeRender;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.HitsplatApplied;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.widgets.Widget;
 import net.runelite.client.Notifier;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.ui.overlay.OverlayManager;
 
 /**
  * Tracks overload and absorption inside the Nightmare Zone dream, mirrors them into {@link EffectState} and fires
@@ -37,33 +42,48 @@ public class EffectTracker
 
 	private final Client client;
 	private final EventBus eventBus;
+	private final OverlayManager overlayManager;
 	private final Notifier notifier;
 	private final AfkNmzConfig config;
 	private final EffectState state;
+	private final EffectOverlay overlay;
 	private final EffectTransitions transitions = new EffectTransitions();
 
 	private boolean inDream;
+	private int lastRefreshes = -1;
+	private boolean builtInHidden;
 
 	@Inject
-	EffectTracker(Client client, EventBus eventBus, Notifier notifier, AfkNmzConfig config, EffectState state)
+	EffectTracker(
+		Client client,
+		EventBus eventBus,
+		OverlayManager overlayManager,
+		Notifier notifier,
+		AfkNmzConfig config,
+		EffectState state,
+		EffectOverlay overlay)
 	{
 		this.client = client;
 		this.eventBus = eventBus;
+		this.overlayManager = overlayManager;
 		this.notifier = notifier;
 		this.config = config;
 		this.state = state;
+		this.overlay = overlay;
 	}
 
-	/** Starts listening for events. */
+	/** Starts listening for events and adds the dream overlay. */
 	public void start()
 	{
 		eventBus.register(this);
+		overlayManager.add(overlay);
 	}
 
-	/** Stops listening and clears all state. */
+	/** Stops listening, removes the overlay and clears all state. */
 	public void stop()
 	{
 		eventBus.unregister(this);
+		overlayManager.remove(overlay);
 		leaveDream();
 	}
 
@@ -131,6 +151,10 @@ public class EffectTracker
 	private void syncOverloadFromVarbit()
 	{
 		int refreshes = client.getVarbitValue(VarbitID.NZONE_OVERLOAD_POTION_EFFECTS);
+		if (lastRefreshes >= 0 && refreshes > lastRefreshes)
+			transitions.drinkOverload();
+
+		lastRefreshes = refreshes;
 		transitions.syncOverload(refreshes * TICKS_PER_REFRESH, TICKS_PER_REFRESH);
 	}
 
@@ -139,12 +163,42 @@ public class EffectTracker
 		state.setOverloadActive(transitions.isOverloadActive());
 		state.setOverloadSettling(transitions.isSettling());
 		state.setOverloadSecondsRemaining(transitions.getOverloadSeconds());
+		state.setOverloadCountdown(Countdown.of(transitions.getOverloadTicks(), Countdown.now()));
 		state.setAbsorptionPoints(points);
+	}
+
+	@Subscribe
+	void onHitsplatApplied(HitsplatApplied event)
+	{
+		if (inDream && event.getActor() == client.getLocalPlayer())
+			transitions.extendSettle();
+	}
+
+	@Subscribe
+	void onBeforeRender(BeforeRender event)
+	{
+		boolean hide = inDream && config.showDreamOverlay() && config.hideBuiltInAbsorption();
+		if (hide || builtInHidden)
+			setBuiltInHidden(hide);
+	}
+
+	/** Hides or restores the game's own NMZ readout, which holds the absorption display. */
+	private void setBuiltInHidden(boolean hidden)
+	{
+		Widget widget = client.getWidget(InterfaceID.NzoneGame.UNIVERSE);
+		if (widget != null)
+			widget.setHidden(hidden);
+
+		builtInHidden = hidden;
 	}
 
 	private void leaveDream()
 	{
+		if (builtInHidden)
+			setBuiltInHidden(false);
+
 		inDream = false;
+		lastRefreshes = -1;
 		transitions.reset();
 		state.reset();
 	}

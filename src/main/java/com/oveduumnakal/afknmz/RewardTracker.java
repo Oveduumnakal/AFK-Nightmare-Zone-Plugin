@@ -11,6 +11,7 @@ import javax.inject.Singleton;
 
 import net.runelite.api.Client;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.Notifier;
 import net.runelite.client.eventbus.EventBus;
@@ -94,8 +95,9 @@ public class RewardTracker
 			return;
 		}
 
-		int points = client.getVarbitValue(VarbitID.NZONE_CURRENTPOINTS);
-		overlay.setRunPoints(runPoints.update(NmzArea.inDream(client), points));
+		int points = client.getVarpValue(VarPlayerID.NZONE_REWARDPOINTS);
+		int dreamPoints = client.getVarbitValue(VarbitID.NZONE_CURRENTPOINTS);
+		overlay.setRunPoints(runPoints.update(NmzArea.inDream(client), dreamPoints));
 		RewardGoal goal = RewardGoal.calculate(wanted, points, config.hardDiscount());
 		overlay.setGoal(goal);
 
