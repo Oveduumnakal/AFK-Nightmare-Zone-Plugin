@@ -16,7 +16,8 @@ import net.runelite.client.plugins.PluginDescriptor;
 /** Makes AFK Nightmare Zone runs safer and easier to track. */
 @PluginDescriptor(
 	name = "AFK Nightmare Zone",
-	description = "Overload/absorption alerts, barrel dose counts, points tracking and orb/cake safety",
+	description = "Reward goal tracking, overload/absorption alerts, barrel dose counts, points tracking and "
+		+ "orb/cake safety",
 	tags = {"nmz", "nightmare", "zone", "overload", "absorption", "afk"},
 	conflicts = {"Nightmare Zone"}
 )
