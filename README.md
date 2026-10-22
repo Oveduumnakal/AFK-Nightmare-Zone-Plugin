@@ -36,8 +36,8 @@ you from misclicking a locator orb or rock cake at the wrong moment.
 
 - **Points overlay**
 
-  Shows your current points, points earned this session, your lifetime total, and points per hour. Reset the session
-  from the settings whenever you like.
+  Shows your total points (including what you have earned so far in the dream). Inside a dream it also shows the
+  points earned in that dream, points per hour and the dream time; these reset when you leave or die.
 
 ### Safety
 

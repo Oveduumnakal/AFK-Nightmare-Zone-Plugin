@@ -171,7 +171,7 @@ public class EffectTracker
 	void onHitsplatApplied(HitsplatApplied event)
 	{
 		if (inDream && event.getActor() == client.getLocalPlayer())
-			transitions.extendSettle();
+			transitions.noteHit(event.getHitsplat().getAmount());
 	}
 
 	@Subscribe

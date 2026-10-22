@@ -34,6 +34,7 @@ public class RewardOverlay extends OverlayPanel
 	private static final int BORDER_SIZE = 3;
 	private static final int VERTICAL_GAP = 4;
 	private static final int ICON_GAP = 5;
+	private static final long MILLIS_PER_HOUR = 3_600_000L;
 	private static final Color BAR_EDGE = new Color(0, 0, 12);
 	private static final Color BAR_CENTER = new Color(18, 32, 175);
 	private static final Color DONE_EDGE = new Color(10, 70, 25);
@@ -47,6 +48,7 @@ public class RewardOverlay extends OverlayPanel
 
 	private volatile RewardGoal goal;
 	private volatile long runPoints;
+	private volatile long pointsPerHour;
 
 	/** Creates the overlay in the top left corner. */
 	@Inject
@@ -68,6 +70,11 @@ public class RewardOverlay extends OverlayPanel
 	}
 
 	/** Sets the points earned so far in the current dream, drawn as its own colour on each bar. */
+	void setPointsPerHour(long pointsPerHour)
+	{
+		this.pointsPerHour = pointsPerHour;
+	}
+
 	void setRunPoints(long runPoints)
 	{
 		this.runPoints = runPoints;
@@ -100,11 +107,15 @@ public class RewardOverlay extends OverlayPanel
 		if (entry.getQuantity() > 1)
 			amount = current.getItemsAffordable(entry) + "/" + entry.getQuantity();
 
+		String eta = timeToReach(entry.getTotalCost() - current.getPoints());
+		if (!eta.isEmpty())
+			amount = amount.isEmpty() ? eta : amount + "  " + eta;
+
 		LineComponent nameLine = LineComponent.builder()
 			.left(entry.getReward().getDisplayName())
 			.leftFont(FontManager.getRunescapeFont())
 			.right(amount)
-			.rightFont(FontManager.getRunescapeBoldFont())
+			.rightFont(FontManager.getRunescapeFont())
 			.build();
 
 		OutlinedProgressBar bar = bar(current.getPoints(), entry.getTotalCost());
@@ -121,6 +132,15 @@ public class RewardOverlay extends OverlayPanel
 			.orientation(ComponentOrientation.HORIZONTAL)
 			.gap(new Point(ICON_GAP, 0))
 			.build();
+	}
+
+	/** How long the points still needed take to earn at this dream's rate, or blank when it can't be estimated. */
+	private String timeToReach(long pointsNeeded)
+	{
+		if (pointsNeeded <= 0 || pointsPerHour <= 0)
+			return "";
+
+		return PointsMath.formatDuration(pointsNeeded * MILLIS_PER_HOUR / pointsPerHour);
 	}
 
 	private OutlinedProgressBar totalRow(RewardGoal current)

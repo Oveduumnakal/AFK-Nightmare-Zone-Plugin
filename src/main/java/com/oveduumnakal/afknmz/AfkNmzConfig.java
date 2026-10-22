@@ -366,7 +366,7 @@ public interface AfkNmzConfig extends Config
 	@ConfigItem(
 		keyName = "showPointsOverlay",
 		name = "Show points overlay",
-		description = "Show current, session and total points and the points per hour rate",
+		description = "Show total and dream points, the points per hour rate and the dream time",
 		section = POINTS,
 		position = 0
 	)

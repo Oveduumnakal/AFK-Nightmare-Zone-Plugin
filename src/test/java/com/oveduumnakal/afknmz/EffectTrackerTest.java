@@ -89,6 +89,8 @@ public class EffectTrackerTest
 	@Test
 	public void absorptionNotifiesAndPublishes()
 	{
+		when(client.getVarbitValue(VarbitID.NZONE_ABSORB_POTION_EFFECTS)).thenReturn(500);
+		tracker.onGameTick(new GameTick());
 		when(client.getVarbitValue(VarbitID.NZONE_ABSORB_POTION_EFFECTS)).thenReturn(150);
 		tracker.onGameTick(new GameTick());
 

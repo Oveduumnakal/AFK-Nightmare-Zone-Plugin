@@ -30,6 +30,7 @@ public class PointsTracker
 	private final EventBus eventBus;
 	private final OverlayManager overlayManager;
 	private final PointsOverlay overlay;
+	private final DreamRate rate;
 
 	private long dreamGain;
 	private long dreamStartMillis;
@@ -37,12 +38,14 @@ public class PointsTracker
 	private boolean wasInDream;
 
 	@Inject
-	PointsTracker(Client client, EventBus eventBus, OverlayManager overlayManager, PointsOverlay overlay)
+	PointsTracker(Client client, EventBus eventBus, OverlayManager overlayManager, PointsOverlay overlay,
+		DreamRate rate)
 	{
 		this.client = client;
 		this.eventBus = eventBus;
 		this.overlayManager = overlayManager;
 		this.overlay = overlay;
+		this.rate = rate;
 	}
 
 	/** Begins tracking: subscribes to events and shows the overlay. */
@@ -116,9 +119,11 @@ public class PointsTracker
 
 	private void publish()
 	{
-		int current = Math.max(0, client.getVarpValue(VarPlayerID.NZONE_REWARDPOINTS));
+		int dreamPoints = NmzArea.inDream(client) ? client.getVarbitValue(VarbitID.NZONE_CURRENTPOINTS) : 0;
+		int current = Math.max(0, client.getVarpValue(VarPlayerID.NZONE_REWARDPOINTS)) + dreamPoints;
 		long elapsed = dreamStartMillis > 0 ? System.currentTimeMillis() - dreamStartMillis : 0;
-		overlay.update(NmzArea.inNmz(client), NmzArea.inDream(client), current, dreamGain, dreamStartMillis,
-			PointsMath.perHour(dreamGain, elapsed));
+		long perHour = PointsMath.perHour(dreamGain, elapsed);
+		rate.setPerHour(perHour);
+		overlay.update(NmzArea.inNmz(client), NmzArea.inDream(client), current, dreamGain, dreamStartMillis, perHour);
 	}
 }

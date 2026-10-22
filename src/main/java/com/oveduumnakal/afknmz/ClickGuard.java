@@ -69,7 +69,9 @@ public class ClickGuard
 				effectState.isOverloadSettling()))
 		{
 			event.consume();
-			warn("AFK NMZ: blocked - overload not active.");
+			warn(effectState.isOverloadActive()
+				? "AFK NMZ: blocked - overload is still damaging you."
+				: "AFK NMZ: blocked - overload not active.");
 			return;
 		}
 

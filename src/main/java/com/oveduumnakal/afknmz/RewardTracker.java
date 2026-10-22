@@ -31,6 +31,7 @@ public class RewardTracker
 	private final Notifier notifier;
 	private final AfkNmzConfig config;
 	private final RewardOverlay overlay;
+	private final DreamRate rate;
 
 	private final AffordableAlert affordableAlert = new AffordableAlert();
 	private final RunPoints runPoints = new RunPoints();
@@ -43,7 +44,8 @@ public class RewardTracker
 		OverlayManager overlayManager,
 		Notifier notifier,
 		AfkNmzConfig config,
-		RewardOverlay overlay)
+		RewardOverlay overlay,
+		DreamRate rate)
 	{
 		this.client = client;
 		this.eventBus = eventBus;
@@ -51,6 +53,7 @@ public class RewardTracker
 		this.notifier = notifier;
 		this.config = config;
 		this.overlay = overlay;
+		this.rate = rate;
 	}
 
 	/** Registers for events and adds the overlay. */
@@ -95,9 +98,11 @@ public class RewardTracker
 			return;
 		}
 
-		int points = client.getVarpValue(VarPlayerID.NZONE_REWARDPOINTS);
-		int dreamPoints = client.getVarbitValue(VarbitID.NZONE_CURRENTPOINTS);
-		overlay.setRunPoints(runPoints.update(NmzArea.inDream(client), dreamPoints));
+		boolean inDream = NmzArea.inDream(client);
+		int dreamPoints = inDream ? client.getVarbitValue(VarbitID.NZONE_CURRENTPOINTS) : 0;
+		int points = client.getVarpValue(VarPlayerID.NZONE_REWARDPOINTS) + dreamPoints;
+		overlay.setRunPoints(runPoints.update(inDream, dreamPoints));
+		overlay.setPointsPerHour(rate.getPerHour());
 		RewardGoal goal = RewardGoal.calculate(wanted, points, config.hardDiscount());
 		overlay.setGoal(goal);
 

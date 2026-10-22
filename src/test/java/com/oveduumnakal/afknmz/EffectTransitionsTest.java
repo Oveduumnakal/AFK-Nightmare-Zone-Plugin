@@ -48,30 +48,36 @@ public class EffectTransitionsTest
 	}
 
 	@Test
-	public void aHitKeepsTheSettlingWindowOpen()
+	public void settlingEndsOnceTheFifthSelfHitLands()
 	{
 		transitions.drinkOverload();
-		for (int i = 0; i < EffectTransitions.SETTLE_TICKS - 1; i++)
-			transitions.tick();
-
-		transitions.extendSettle();
-		for (int i = 0; i < EffectTransitions.HIT_MARGIN_TICKS - 1; i++)
-			transitions.tick();
+		for (int i = 0; i < EffectTransitions.SELF_HITS - 1; i++)
+			transitions.noteHit(EffectTransitions.SELF_HIT_DAMAGE);
 
 		assertTrue(transitions.isSettling());
+		transitions.noteHit(EffectTransitions.SELF_HIT_DAMAGE);
 		transitions.tick();
 
 		assertFalse(transitions.isSettling());
+		assertTrue(transitions.isOverloadActive());
 	}
 
 	@Test
-	public void aHitAfterSettlingDoesNotReopenIt()
+	public void otherHitsDoNotCloseTheSettlingWindow()
 	{
 		transitions.drinkOverload();
-		for (int i = 0; i < EffectTransitions.SETTLE_TICKS; i++)
-			transitions.tick();
+		for (int i = 0; i < 2 * EffectTransitions.SELF_HITS; i++)
+			transitions.noteHit(7);
 
-		transitions.extendSettle();
+		assertTrue(transitions.isSettling());
+	}
+
+	@Test
+	public void hitsOutsideTheWindowAreIgnored()
+	{
+		transitions.seedOverload(100);
+		for (int i = 0; i < EffectTransitions.SELF_HITS; i++)
+			transitions.noteHit(EffectTransitions.SELF_HIT_DAMAGE);
 
 		assertFalse(transitions.isSettling());
 	}
@@ -129,10 +135,19 @@ public class EffectTransitionsTest
 	}
 
 	@Test
+	public void drinkingAbsorptionBelowTheThresholdStaysQuiet()
+	{
+		assertEquals(AbsorptionEvent.NONE, transitions.updateAbsorption(50, 200));
+		assertEquals(AbsorptionEvent.NONE, transitions.updateAbsorption(100, 200));
+		assertEquals(AbsorptionEvent.NONE, transitions.updateAbsorption(150, 200));
+		assertEquals(AbsorptionEvent.LOW, transitions.updateAbsorption(140, 200));
+	}
+
+	@Test
 	public void absorptionDepletedNeedsPriorPositive()
 	{
 		assertEquals(AbsorptionEvent.NONE, transitions.updateAbsorption(0, 200));
-		assertEquals(AbsorptionEvent.LOW, transitions.updateAbsorption(5, 200));
+		assertEquals(AbsorptionEvent.NONE, transitions.updateAbsorption(5, 200));
 		assertEquals(AbsorptionEvent.DEPLETED, transitions.updateAbsorption(0, 200));
 		assertEquals(AbsorptionEvent.NONE, transitions.updateAbsorption(0, 200));
 	}

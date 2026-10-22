@@ -13,7 +13,7 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 
-/** Panel listing current points, the dream's points and time, and the hourly rate, fed by {@link PointsTracker}. */
+/** Panel listing total points, the dream's points and time, and the hourly rate, fed by {@link PointsTracker}. */
 public class PointsOverlay extends OverlayPanel
 {
 	private final AfkNmzConfig config;
@@ -39,7 +39,7 @@ public class PointsOverlay extends OverlayPanel
 	 *
 	 * @param inNmz whether the player is in the dream or its lobby
 	 * @param inDream whether the player is inside a dream
-	 * @param current points currently held
+	 * @param current points held plus those earned so far in the dream
 	 * @param dream points gained in the dream in progress
 	 * @param dreamStartMillis clock time the dream began, or 0 when none is running
 	 * @param perHour the dream's points per hour
@@ -64,7 +64,7 @@ public class PointsOverlay extends OverlayPanel
 		panelComponent.getChildren().add(TitleComponent.builder()
 			.text("NMZ Points")
 			.build());
-		addLine("Current:", PointsMath.format(current), true);
+		addLine("Total:", PointsMath.format(current), true);
 		addLine("Dream:", PointsMath.format(dream), inDream && config.showSessionPoints());
 		addLine("Points/hr:", PointsMath.format(perHour), inDream && config.showPointsPerHour());
 		long elapsed = dreamStartMillis > 0 ? System.currentTimeMillis() - dreamStartMillis : 0;
