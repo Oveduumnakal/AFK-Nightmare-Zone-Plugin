@@ -13,7 +13,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import net.runelite.api.Client;
-import net.runelite.api.WorldView;
 import net.runelite.client.game.ItemManager;
 
 import static org.junit.Assert.assertEquals;
@@ -26,7 +25,6 @@ import static org.mockito.Mockito.when;
 public class EffectOverlayTest
 {
 	private Client client;
-	private WorldView worldView;
 	private AfkNmzConfig config;
 	private EffectState state;
 	private EffectOverlay overlay;
@@ -36,18 +34,15 @@ public class EffectOverlayTest
 	public void setUp()
 	{
 		client = mock(Client.class);
-		worldView = mock(WorldView.class);
 		config = mock(AfkNmzConfig.class);
 		state = new EffectState();
-		when(client.getTopLevelWorldView()).thenReturn(worldView);
-		when(worldView.getMapRegions()).thenReturn(new int[] {9033});
+		state.setInDream(true);
 		when(config.showDreamOverlay()).thenReturn(true);
 		when(config.showOverloadTimer()).thenReturn(true);
 		when(config.showAbsorptionPoints()).thenReturn(true);
 		when(config.overloadWarningSeconds()).thenReturn(30);
 		when(config.absorptionThreshold()).thenReturn(200);
-		overlay = new EffectOverlay(client, config, state, new DefaultPlacement(client),
-			mock(ItemManager.class));
+		overlay = new EffectOverlay(config, state, new DefaultPlacement(client), mock(ItemManager.class));
 		graphics = new BufferedImage(200, 100, BufferedImage.TYPE_INT_ARGB).createGraphics();
 	}
 
@@ -74,7 +69,7 @@ public class EffectOverlayTest
 	@Test
 	public void hiddenOutsideTheDream()
 	{
-		when(worldView.getMapRegions()).thenReturn(new int[] {1234});
+		state.setInDream(false);
 
 		assertNull(overlay.render(graphics));
 	}

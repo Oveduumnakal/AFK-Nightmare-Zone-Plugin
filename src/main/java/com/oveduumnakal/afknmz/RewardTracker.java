@@ -10,6 +10,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
@@ -32,9 +34,9 @@ public class RewardTracker
 	private final AfkNmzConfig config;
 	private final RewardOverlay overlay;
 	private final DreamRate rate;
+	private final DefaultPlacement placement;
 
 	private final AffordableAlert affordableAlert = new AffordableAlert();
-	private final RunPoints runPoints = new RunPoints();
 
 	/** Creates the tracker; call {@link #start()} to begin tracking. */
 	@Inject
@@ -45,7 +47,8 @@ public class RewardTracker
 		Notifier notifier,
 		AfkNmzConfig config,
 		RewardOverlay overlay,
-		DreamRate rate)
+		DreamRate rate,
+		DefaultPlacement placement)
 	{
 		this.client = client;
 		this.eventBus = eventBus;
@@ -54,15 +57,16 @@ public class RewardTracker
 		this.config = config;
 		this.overlay = overlay;
 		this.rate = rate;
+		this.placement = placement;
 	}
 
 	/** Registers for events and adds the overlay. */
 	public void start()
 	{
 		affordableAlert.reset();
-		runPoints.reset();
 		eventBus.register(this);
 		overlayManager.add(overlay);
+		placement.prime(overlay);
 	}
 
 	/** Unregisters from events and removes the overlay. */
@@ -87,10 +91,28 @@ public class RewardTracker
 		return wanted;
 	}
 
+	/** Forgets the alert state on logout or hop, so the next account's first look at its goal stays quiet. */
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		GameState state = event.getGameState();
+		if (state == GameState.LOGIN_SCREEN || state == GameState.HOPPING)
+			affordableAlert.reset();
+	}
+
 	/** Refreshes the goal and fires the affordable notification once. */
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
+		catchUp();
+	}
+
+	/** Brings the panel's figures up to date; runs every game tick, and once on plugin start so it shows at once. */
+	void catchUp()
+	{
+		if (client.getGameState() != GameState.LOGGED_IN)
+			return;
+
 		Map<NmzReward, Integer> wanted = selectedRewards();
 		if (wanted.isEmpty() || !NmzArea.inNmz(client))
 		{
@@ -98,10 +120,9 @@ public class RewardTracker
 			return;
 		}
 
-		boolean inDream = NmzArea.inDream(client);
-		int dreamPoints = inDream ? client.getVarbitValue(VarbitID.NZONE_CURRENTPOINTS) : 0;
+		int dreamPoints = NmzArea.inDream(client) ? client.getVarbitValue(VarbitID.NZONE_CURRENTPOINTS) : 0;
 		int points = client.getVarpValue(VarPlayerID.NZONE_REWARDPOINTS) + dreamPoints;
-		overlay.setRunPoints(runPoints.update(inDream, dreamPoints));
+		overlay.setRunPoints(dreamPoints);
 		overlay.setPointsPerHour(rate.getPerHour());
 		RewardGoal goal = RewardGoal.calculate(wanted, points, config.hardDiscount());
 		overlay.setGoal(goal);

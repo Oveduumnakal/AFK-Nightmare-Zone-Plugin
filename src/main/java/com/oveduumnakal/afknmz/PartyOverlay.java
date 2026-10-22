@@ -40,7 +40,7 @@ public class PartyOverlay extends OverlayPanel
 		if (!config.showRumbleParty() || party.size() < 2 || !NmzArea.inLobby(client))
 			return null;
 
-		placement.place(this, -1);
+		Graphics2D canvas = placement.place(this, -1, graphics);
 		panelComponent.getChildren().add(TitleComponent.builder()
 			.text("Rumble Party")
 			.build());
@@ -49,6 +49,6 @@ public class PartyOverlay extends OverlayPanel
 				.left(name)
 				.build());
 
-		return super.render(graphics);
+		return super.render(canvas);
 	}
 }

@@ -31,6 +31,7 @@ public class PointsTracker
 	private final OverlayManager overlayManager;
 	private final PointsOverlay overlay;
 	private final DreamRate rate;
+	private final DefaultPlacement placement;
 
 	private long dreamGain;
 	private long dreamStartMillis;
@@ -39,13 +40,14 @@ public class PointsTracker
 
 	@Inject
 	PointsTracker(Client client, EventBus eventBus, OverlayManager overlayManager, PointsOverlay overlay,
-		DreamRate rate)
+		DreamRate rate, DefaultPlacement placement)
 	{
 		this.client = client;
 		this.eventBus = eventBus;
 		this.overlayManager = overlayManager;
 		this.overlay = overlay;
 		this.rate = rate;
+		this.placement = placement;
 	}
 
 	/** Begins tracking: subscribes to events and shows the overlay. */
@@ -56,13 +58,15 @@ public class PointsTracker
 		wasInDream = false;
 		eventBus.register(this);
 		overlayManager.add(overlay);
+		placement.prime(overlay);
 	}
 
-	/** Stops tracking, hides the overlay. */
+	/** Stops tracking, hides the overlay and clears its figures, so on restart it waits for the next tick. */
 	public void stop()
 	{
 		eventBus.unregister(this);
 		overlayManager.remove(overlay);
+		overlay.update(false, false, 0, 0, 0, 0);
 	}
 
 	@Subscribe
@@ -78,12 +82,20 @@ public class PointsTracker
 			return;
 
 		dreamGain += gain;
-		publish();
 	}
 
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
+		catchUp();
+	}
+
+	/** Brings the panel's figures up to date; runs every game tick, and once on plugin start so it shows at once. */
+	void catchUp()
+	{
+		if (client.getGameState() != GameState.LOGGED_IN)
+			return;
+
 		boolean inDream = NmzArea.inDream(client);
 		if (inDream && !wasInDream)
 		{

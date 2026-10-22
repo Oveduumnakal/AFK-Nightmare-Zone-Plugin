@@ -15,6 +15,8 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.components.ComponentConstants;
@@ -32,6 +34,9 @@ class OutlinedProgressBar implements LayoutableRenderableEntity
 
 	/** Pixels to move the labels down, because the overlay draws this font 2px above where its metrics place it. */
 	private static final int TEXT_DROP = 2;
+
+	/** {@link #inkRows} results per font, since measuring paints and scans a whole image. */
+	private static final Map<Font, int[]> INK_ROWS = new ConcurrentHashMap<>();
 
 	private double value;
 	private double runValue;
@@ -82,11 +87,6 @@ class OutlinedProgressBar implements LayoutableRenderableEntity
 		this.rightLabel = label;
 	}
 
-	void setForegroundColor(Color color)
-	{
-		setForegroundGradient(color, color);
-	}
-
 	/** Sets the fill's top and bottom colour and the colour it fades to through the middle. */
 	void setForegroundGradient(Color edge, Color center)
 	{
@@ -121,7 +121,7 @@ class OutlinedProgressBar implements LayoutableRenderableEntity
 
 		graphics.setFont(FontManager.getRunescapeSmallFont());
 		FontMetrics metrics = graphics.getFontMetrics();
-		int[] ink = inkRows(graphics.getFont());
+		int[] ink = INK_ROWS.computeIfAbsent(graphics.getFont(), OutlinedProgressBar::inkRows);
 		int textY = y + (height - ink[1]) / 2 + ink[0] + TEXT_DROP;
 		drawOutlined(graphics, leftLabel, x + TEXT_PADDING, textY);
 		drawOutlined(graphics, centerLabel, x + (width - metrics.stringWidth(centerLabel)) / 2, textY);

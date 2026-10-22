@@ -4,14 +4,12 @@
  */
 package com.oveduumnakal.afknmz;
 
-import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.GameState;
-import net.runelite.api.Tile;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
@@ -63,33 +61,18 @@ public class BarrelTracker
 		if (client.getGameState() != GameState.LOGGED_IN)
 			return;
 
-		for (Tile[][] plane : client.getTopLevelWorldView().getScene().getTiles())
-		{
-			for (Tile[] row : plane)
-			{
-				for (Tile tile : row)
-				{
-					if (tile != null)
-						trackBarrels(tile.getGameObjects());
-				}
-			}
-		}
+		SceneObjects.forEach(client, this::track);
 	}
 
-	private void trackBarrels(GameObject[] objects)
+	private void track(GameObject object)
 	{
-		for (GameObject object : objects)
-		{
-			if (object != null)
-				NmzBarrel.forObjectId(object.getId()).ifPresent(found -> overlay.add(object, found));
-		}
+		NmzBarrel.forObjectId(object.getId()).ifPresent(found -> overlay.add(object, found));
 	}
 
 	@Subscribe
 	void onGameObjectSpawned(GameObjectSpawned event)
 	{
-		Optional<NmzBarrel> barrel = NmzBarrel.forObjectId(event.getGameObject().getId());
-		barrel.ifPresent(found -> overlay.add(event.getGameObject(), found));
+		track(event.getGameObject());
 	}
 
 	@Subscribe

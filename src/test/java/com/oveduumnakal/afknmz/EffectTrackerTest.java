@@ -15,6 +15,7 @@ import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.Notifier;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.Notification;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -25,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -40,6 +42,7 @@ public class EffectTrackerTest
 	private OverlayManager overlayManager;
 	private EffectOverlay overlay;
 	private EffectTracker tracker;
+	private ClientThread clientThread;
 
 	@Before
 	public void setUp()
@@ -53,9 +56,18 @@ public class EffectTrackerTest
 		when(worldView.getMapRegions()).thenReturn(new int[] {9033});
 		overlayManager = mock(OverlayManager.class);
 		overlay = mock(EffectOverlay.class);
-		tracker = new EffectTracker(client, mock(EventBus.class), overlayManager, notifier, new AfkNmzConfig()
+		clientThread = mock(ClientThread.class);
+		doAnswer(invocation ->
 		{
-		}, state, overlay);
+			invocation.<Runnable>getArgument(0).run();
+			return null;
+		})
+			.when(clientThread)
+			.invoke(any(Runnable.class));
+		tracker = new EffectTracker(client, clientThread, mock(EventBus.class), overlayManager, notifier,
+			new AfkNmzConfig()
+			{
+			}, state, overlay, new DefaultPlacement(client));
 	}
 
 	private void drink()
@@ -136,6 +148,31 @@ public class EffectTrackerTest
 	}
 
 	@Test
+	public void catchUpFillsTheReadoutMidDreamWithoutTicking()
+	{
+		when(client.getVarbitValue(VarbitID.NZONE_OVERLOAD_POTION_EFFECTS)).thenReturn(10);
+		when(client.getVarbitValue(VarbitID.NZONE_ABSORB_POTION_EFFECTS)).thenReturn(640);
+
+		tracker.catchUp();
+
+		assertTrue(state.isInDream());
+		assertTrue(state.isOverloadActive());
+		assertEquals(10 * EffectTracker.TICKS_PER_REFRESH, state.getOverloadCountdown().getTicks());
+		assertEquals(640, state.getAbsorptionPoints());
+		verify(notifier, never()).notify(any(Notification.class), anyString());
+	}
+
+	@Test
+	public void catchUpOutsideTheDreamLeavesTheReadoutEmpty()
+	{
+		when(worldView.getMapRegions()).thenReturn(new int[] {1234});
+
+		tracker.catchUp();
+
+		assertFalse(state.isInDream());
+	}
+
+	@Test
 	public void leavingDreamClearsCountdown()
 	{
 		tracker.onGameTick(new GameTick());
@@ -155,5 +192,19 @@ public class EffectTrackerTest
 
 		tracker.stop();
 		verify(overlayManager).remove(overlay);
+	}
+
+	@Test
+	public void stopClearsStateOnTheClientThread()
+	{
+		tracker.onGameTick(new GameTick());
+		drink();
+		tracker.onGameTick(new GameTick());
+		assertTrue(state.isOverloadActive());
+
+		tracker.stop();
+
+		verify(clientThread).invoke(any(Runnable.class));
+		assertFalse(state.isOverloadActive());
 	}
 }

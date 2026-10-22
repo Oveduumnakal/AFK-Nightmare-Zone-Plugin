@@ -43,7 +43,7 @@ AFK Nightmare Zone is a RuneLite plugin for long Nightmare Zone sessions. Tick t
 
 - **See your coffer above Dominic's coffer**
 
-  The coffer's coins are drawn right above Dominic's coffer, and show a locked notice with a key when it is still locked. The game's own coffer readout is hidden so you are not looking at two.
+  The coffer's coins are drawn right above Dominic's coffer. It reads Empty when there are no coins in it, and shows a locked notice with a key when it is still locked. The game's own coffer readout is hidden so you are not looking at two.
 
   <img src="docs/img/06-coffer-overhead.png" alt="A coin stack icon above Dominic's coffer in the lobby, showing the coffer's contents" width="142">
 
