@@ -17,8 +17,9 @@ public class EffectTransitions
 	static final int OVERLOAD_TICKS = 500;
 
 	/**
-	 * Ticks after drinking during which the self-damage hits are still landing. Unverified in game: sized for 5 hits
-	 * up to 3 ticks apart, plus margin, since a shorter window let rock cake clicks through mid-damage.
+	 * Most ticks after drinking during which the self-damage hits can still be landing: 5 hits up to 3 ticks apart,
+	 * plus margin, since a shorter window let rock cake clicks through mid-damage. The window normally closes sooner,
+	 * once {@link #noteHit} has counted the fifth hit.
 	 */
 	static final int SETTLE_TICKS = 14;
 

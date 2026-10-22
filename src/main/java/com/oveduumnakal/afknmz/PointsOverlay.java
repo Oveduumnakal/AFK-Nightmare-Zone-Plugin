@@ -60,7 +60,7 @@ public class PointsOverlay extends OverlayPanel
 		if (!config.showPointsOverlay() || !inNmz)
 			return null;
 
-		placement.place(this, 0);
+		Graphics2D canvas = placement.place(this, 0, graphics);
 		panelComponent.getChildren().add(TitleComponent.builder()
 			.text("NMZ Points")
 			.build());
@@ -70,7 +70,7 @@ public class PointsOverlay extends OverlayPanel
 		long elapsed = dreamStartMillis > 0 ? System.currentTimeMillis() - dreamStartMillis : 0;
 		addLine("Dream Time:", PointsMath.formatDuration(elapsed), inDream && config.showDreamTime());
 
-		return super.render(graphics);
+		return super.render(canvas);
 	}
 
 	private void addLine(String left, String right, boolean enabled)

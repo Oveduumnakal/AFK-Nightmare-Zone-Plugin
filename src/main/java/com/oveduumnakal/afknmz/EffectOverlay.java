@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
 
-import net.runelite.api.Client;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.OverlayPanel;
@@ -26,19 +25,16 @@ public class EffectOverlay extends OverlayPanel
 	private static final Color LOW_COLOR = new Color(255, 90, 90);
 	private static final Color OFF_COLOR = Color.GRAY;
 
-	private final Client client;
 	private final AfkNmzConfig config;
 	private final EffectState state;
 	private final DefaultPlacement placement;
 	private final ItemManager itemManager;
 
 	@Inject
-	EffectOverlay(Client client, AfkNmzConfig config, EffectState state, DefaultPlacement placement,
-		ItemManager itemManager)
+	EffectOverlay(AfkNmzConfig config, EffectState state, DefaultPlacement placement, ItemManager itemManager)
 	{
 		this.itemManager = itemManager;
 		this.placement = placement;
-		this.client = client;
 		this.config = config;
 		this.state = state;
 		setPosition(OverlayPosition.TOP_LEFT);
@@ -47,17 +43,17 @@ public class EffectOverlay extends OverlayPanel
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!config.showDreamOverlay() || !NmzArea.inDream(client))
+		if (!config.showDreamOverlay() || !state.isInDream())
 			return null;
 
-		placement.place(this, 1);
+		Graphics2D canvas = placement.place(this, 1, graphics);
 		for (Line line : lines(Countdown.now()))
 		{
 			panelComponent.getChildren().add(new IconLine(line.name, itemManager.getImage(line.itemId), line.right,
 				line.rightColour));
 		}
 
-		return super.render(graphics);
+		return super.render(canvas);
 	}
 
 	/** The lines to show at the given moment, according to the settings. */

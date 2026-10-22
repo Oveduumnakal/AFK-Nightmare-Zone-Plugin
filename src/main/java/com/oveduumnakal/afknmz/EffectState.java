@@ -13,11 +13,18 @@ import javax.inject.Singleton;
 @Singleton
 public class EffectState
 {
+	private volatile boolean inDream;
 	private volatile boolean overloadActive;
 	private volatile boolean overloadSettling;
 	private volatile int overloadSecondsRemaining;
 	private volatile int absorptionPoints;
 	private volatile Countdown overloadCountdown = Countdown.NONE;
+
+	/** Whether the tracker has seen the player inside a dream on the latest game tick. */
+	public boolean isInDream()
+	{
+		return inDream;
+	}
 
 	/** Whether an overload potion's effect is currently running. */
 	public boolean isOverloadActive()
@@ -49,6 +56,11 @@ public class EffectState
 		return overloadCountdown;
 	}
 
+	void setInDream(boolean inDream)
+	{
+		this.inDream = inDream;
+	}
+
 	void setOverloadActive(boolean overloadActive)
 	{
 		this.overloadActive = overloadActive;
@@ -77,6 +89,7 @@ public class EffectState
 	/** Clears everything, for leaving the dream or logging out. */
 	void reset()
 	{
+		inDream = false;
 		overloadActive = false;
 		overloadSettling = false;
 		overloadSecondsRemaining = 0;

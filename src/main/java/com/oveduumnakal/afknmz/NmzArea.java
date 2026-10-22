@@ -16,7 +16,7 @@ final class NmzArea
 	/** Map region of the inside of a dream, as used by the built-in Nightmare Zone plugin. */
 	static final int DREAM_REGION = 9033;
 
-	/** Region of the Yanille lobby where the dream is entered; computed from its coordinates, not seen in game. */
+	/** Region of the Yanille lobby where the dream is entered. */
 	static final int LOBBY_REGION = 10288;
 
 	private static final int[] DREAM_REGIONS = {DREAM_REGION};

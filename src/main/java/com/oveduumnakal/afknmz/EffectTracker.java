@@ -19,6 +19,7 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.Notifier;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -41,12 +42,14 @@ public class EffectTracker
 	static final int TICKS_PER_REFRESH = 25;
 
 	private final Client client;
+	private final ClientThread clientThread;
 	private final EventBus eventBus;
 	private final OverlayManager overlayManager;
 	private final Notifier notifier;
 	private final AfkNmzConfig config;
 	private final EffectState state;
 	private final EffectOverlay overlay;
+	private final DefaultPlacement placement;
 	private final EffectTransitions transitions = new EffectTransitions();
 
 	private boolean inDream;
@@ -56,20 +59,24 @@ public class EffectTracker
 	@Inject
 	EffectTracker(
 		Client client,
+		ClientThread clientThread,
 		EventBus eventBus,
 		OverlayManager overlayManager,
 		Notifier notifier,
 		AfkNmzConfig config,
 		EffectState state,
-		EffectOverlay overlay)
+		EffectOverlay overlay,
+		DefaultPlacement placement)
 	{
 		this.client = client;
+		this.clientThread = clientThread;
 		this.eventBus = eventBus;
 		this.overlayManager = overlayManager;
 		this.notifier = notifier;
 		this.config = config;
 		this.state = state;
 		this.overlay = overlay;
+		this.placement = placement;
 	}
 
 	/** Starts listening for events and adds the dream overlay. */
@@ -77,14 +84,15 @@ public class EffectTracker
 	{
 		eventBus.register(this);
 		overlayManager.add(overlay);
+		placement.prime(overlay);
 	}
 
-	/** Stops listening, removes the overlay and clears all state. */
+	/** Stops listening, removes the overlay, then clears all state on the client thread, which widgets require. */
 	public void stop()
 	{
 		eventBus.unregister(this);
 		overlayManager.remove(overlay);
-		leaveDream();
+		clientThread.invoke(this::leaveDream);
 	}
 
 	@Subscribe
@@ -139,6 +147,20 @@ public class EffectTracker
 		publish(points);
 	}
 
+	/**
+	 * Fills the dream readout at once when the plugin is switched on mid-dream, without counting down a tick or
+	 * sending alerts; the next game tick carries on from here. Call it on the client thread.
+	 */
+	void catchUp()
+	{
+		if (client.getGameState() != GameState.LOGGED_IN || !NmzArea.inDream(client))
+			return;
+
+		inDream = true;
+		syncOverloadFromVarbit();
+		publish(client.getVarbitValue(VarbitID.NZONE_ABSORB_POTION_EFFECTS));
+	}
+
 	private void overloadExpired()
 	{
 		notifier.notify(config.overloadExpired(), "Your overload has worn off");
@@ -160,6 +182,7 @@ public class EffectTracker
 
 	private void publish(int points)
 	{
+		state.setInDream(true);
 		state.setOverloadActive(transitions.isOverloadActive());
 		state.setOverloadSettling(transitions.isSettling());
 		state.setOverloadSecondsRemaining(transitions.getOverloadSeconds());

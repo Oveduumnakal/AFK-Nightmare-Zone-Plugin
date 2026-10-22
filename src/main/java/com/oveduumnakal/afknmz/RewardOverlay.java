@@ -69,12 +69,13 @@ public class RewardOverlay extends OverlayPanel
 		this.goal = goal;
 	}
 
-	/** Sets the points earned so far in the current dream, drawn as its own colour on each bar. */
+	/** Sets the dream's points-per-hour rate, used for each reward's time-to-afford estimate. */
 	void setPointsPerHour(long pointsPerHour)
 	{
 		this.pointsPerHour = pointsPerHour;
 	}
 
+	/** Sets the points earned so far in the current dream, drawn as its own colour on each bar. */
 	void setRunPoints(long runPoints)
 	{
 		this.runPoints = runPoints;
@@ -87,8 +88,8 @@ public class RewardOverlay extends OverlayPanel
 		if (current == null || current.isEmpty())
 			return null;
 
-		placement.place(this, 2);
-		graphics.setFont(FontManager.getRunescapeSmallFont());
+		Graphics2D canvas = placement.place(this, 2, graphics);
+		canvas.setFont(FontManager.getRunescapeSmallFont());
 		for (RewardGoal.Entry entry : current.getEntries())
 			panelComponent.getChildren().add(entryRow(current, entry));
 
@@ -98,7 +99,7 @@ public class RewardOverlay extends OverlayPanel
 			panelComponent.getChildren().add(totalRow(current));
 		}
 
-		return super.render(graphics);
+		return super.render(canvas);
 	}
 
 	private SplitComponent entryRow(RewardGoal current, RewardGoal.Entry entry)

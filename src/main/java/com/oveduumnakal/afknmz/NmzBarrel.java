@@ -15,8 +15,8 @@ import net.runelite.api.gameval.VarbitID;
  *
  * <p>Object ids ({@code NZONE_BARREL_1..4}) and dose varbits ({@code NZONE_POTION_1..4}) come from the
  * RuneLite gameval constants. The object-to-potion pairing was confirmed in game: barrel 1 is super ranging,
- * 2 is super magic, 3 is overload and 4 is absorption. The dose varbit is assumed to share the barrel's slot
- * number; confirm that the drawn counts match the stored doses.
+ * 2 is super magic, 3 is overload and 4 is absorption. Each dose varbit shares its barrel's slot number, also
+ * confirmed in game against the stored doses.
  */
 public enum NmzBarrel
 {

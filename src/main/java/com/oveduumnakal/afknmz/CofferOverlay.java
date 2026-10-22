@@ -21,7 +21,7 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayUtil;
 
-/** Draws the coffer's coins, or a locked notice with a key, above Dominic's coffer in the lobby. */
+/** Draws the coffer's coins, an empty notice, or a locked notice with a key, above Dominic's coffer in the lobby. */
 public class CofferOverlay extends Overlay
 {
 	private static final int HEIGHT_ABOVE_COFFER = 80;
@@ -55,10 +55,23 @@ public class CofferOverlay extends Overlay
 			return null;
 
 		boolean locked = state.isCofferLocked();
-		String text = locked ? "Locked" : "";
-		BufferedImage icon = locked
-			? itemManager.getImage(ItemID.VARLAMORE_THIEVING_HOUSE_KEY)
-			: itemManager.getImage(ItemID.COINS, Math.max(1, state.getCofferCoins()), true);
+		int coins = state.getCofferCoins();
+		String text = "";
+		BufferedImage icon;
+		if (locked)
+		{
+			text = "Locked";
+			icon = itemManager.getImage(ItemID.VARLAMORE_THIEVING_HOUSE_KEY);
+		}
+		else if (coins <= 0)
+		{
+			text = "Empty";
+			icon = itemManager.getImage(ItemID.COINS);
+		}
+		else
+		{
+			icon = itemManager.getImage(ItemID.COINS, coins, true);
+		}
 
 		FontMetrics metrics = graphics.getFontMetrics();
 		int width = text.isEmpty() ? icon.getWidth() : metrics.stringWidth(text) + GAP + icon.getWidth();

@@ -26,6 +26,7 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.ObjectID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -47,6 +48,7 @@ public class LobbyTracker
 	private static final long COFFER_UNIT = 1000;
 
 	private final Client client;
+	private final ClientThread clientThread;
 	private final EventBus eventBus;
 	private final OverlayManager overlayManager;
 	private final AfkNmzConfig config;
@@ -54,6 +56,7 @@ public class LobbyTracker
 	private final CofferOverlay cofferOverlay;
 	private final PartyOverlay partyOverlay;
 	private final VialOverlay vialOverlay;
+	private final DefaultPlacement placement;
 
 	private boolean partyHidden;
 	private boolean cofferHidden;
@@ -61,15 +64,18 @@ public class LobbyTracker
 	@Inject
 	LobbyTracker(
 		Client client,
+		ClientThread clientThread,
 		EventBus eventBus,
 		OverlayManager overlayManager,
 		AfkNmzConfig config,
 		LobbyState state,
 		CofferOverlay cofferOverlay,
 		PartyOverlay partyOverlay,
-		VialOverlay vialOverlay)
+		VialOverlay vialOverlay,
+		DefaultPlacement placement)
 	{
 		this.client = client;
+		this.clientThread = clientThread;
 		this.eventBus = eventBus;
 		this.overlayManager = overlayManager;
 		this.config = config;
@@ -77,6 +83,7 @@ public class LobbyTracker
 		this.cofferOverlay = cofferOverlay;
 		this.partyOverlay = partyOverlay;
 		this.vialOverlay = vialOverlay;
+		this.placement = placement;
 	}
 
 	/** Starts listening for events and adds the lobby overlays. */
@@ -85,6 +92,7 @@ public class LobbyTracker
 		eventBus.register(this);
 		overlayManager.add(cofferOverlay);
 		overlayManager.add(partyOverlay);
+		placement.prime(partyOverlay);
 		overlayManager.add(vialOverlay);
 	}
 
@@ -95,17 +103,44 @@ public class LobbyTracker
 		overlayManager.remove(cofferOverlay);
 		overlayManager.remove(partyOverlay);
 		overlayManager.remove(vialOverlay);
-		restoreBuiltIn();
+		clientThread.invoke(this::restoreBuiltIn);
 		state.reset();
+	}
+
+	/**
+	 * Picks up the coffer, vials and Dominic already in the scene and reads the lobby at once, for the plugin being
+	 * switched on in an already-loaded lobby. Call it on the client thread.
+	 */
+	void catchUp()
+	{
+		if (client.getGameState() != GameState.LOGGED_IN)
+			return;
+
+		SceneObjects.forEach(client, this::track);
+		for (NPC npc : client.getTopLevelWorldView().npcs())
+			track(npc);
+
+		refresh();
+	}
+
+	private void track(GameObject object)
+	{
+		if (isCoffer(object.getId()))
+			state.setCoffer(object);
+		else if (isVial(object.getId()))
+			state.getVials().add(object);
+	}
+
+	private void track(NPC npc)
+	{
+		if (npc.getName() != null && Text.removeTags(npc.getName()).contains(DOMINIC))
+			state.setDominic(npc);
 	}
 
 	@Subscribe
 	void onGameObjectSpawned(GameObjectSpawned event)
 	{
-		if (isCoffer(event.getGameObject().getId()))
-			state.setCoffer(event.getGameObject());
-		else if (isVial(event.getGameObject().getId()))
-			state.getVials().add(event.getGameObject());
+		track(event.getGameObject());
 	}
 
 	@Subscribe
@@ -120,9 +155,7 @@ public class LobbyTracker
 	@Subscribe
 	void onNpcSpawned(NpcSpawned event)
 	{
-		NPC npc = event.getNpc();
-		if (npc.getName() != null && Text.removeTags(npc.getName()).contains(DOMINIC))
-			state.setDominic(npc);
+		track(event.getNpc());
 	}
 
 	@Subscribe
@@ -146,6 +179,11 @@ public class LobbyTracker
 
 	@Subscribe
 	void onGameTick(GameTick event)
+	{
+		refresh();
+	}
+
+	private void refresh()
 	{
 		if (!NmzArea.inLobby(client))
 		{

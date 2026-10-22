@@ -8,6 +8,7 @@ import javax.inject.Inject;
 
 import com.google.inject.Provides;
 
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -21,6 +22,9 @@ import net.runelite.client.plugins.PluginDescriptor;
 )
 public class AfkNmzPlugin extends Plugin
 {
+	@Inject
+	private ClientThread clientThread;
+
 	@Inject
 	private EffectTracker effectTracker;
 
@@ -56,6 +60,16 @@ public class AfkNmzPlugin extends Plugin
 		afkAlerts.start();
 		lobbyTracker.start();
 		dominicMenu.start();
+		clientThread.invoke(this::catchUp);
+	}
+
+	/** Fills every panel at once on start, all in one client frame so they appear together, not on the next tick. */
+	private void catchUp()
+	{
+		effectTracker.catchUp();
+		pointsTracker.catchUp();
+		rewardTracker.catchUp();
+		lobbyTracker.catchUp();
 	}
 
 	@Override
